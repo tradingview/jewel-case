@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Volta and Node.js
+      uses: volta-cli/action@v3
+    - run: npx pnpm install
