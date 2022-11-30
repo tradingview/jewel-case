@@ -1,11 +1,16 @@
 {
 	"dependencies": {
+		"editorconfig-checker": "^4.0.2",
 		"lint-staged": "^13.0.4"
 	},
 	"devDependencies": {
 		"husky": "^8.0.0"
 	},
 	"packageManager": "pnpm@7.17.1",
+	"scripts": {
+		"lint": "pnpm lint:ec",
+		"lint:ec": "ec"
+	},
 	"volta": {
 		"node": "16.18.1"
 	}

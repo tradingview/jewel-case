@@ -8,4 +8,5 @@ Lifecycle commands:
 |--------------------------| ----------------------------------------|
 | `npx pnpm install`       | install all dependencies for a project  |
 | `npx pnpm husky install` | enable Git hooks                        |
+| `npx pnpm lint`          | lint all files                          |
 | `npx pnpm lint-staged`   | lint all staged files                   |
