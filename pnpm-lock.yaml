@@ -1,18 +1,26 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@tsconfig/node16-strictest-esm': ^1.0.3
   editorconfig-checker: ^4.0.2
   husky: ^8.0.0
   lint-staged: ^13.0.4
+  typescript: ^4.9.3
 
 dependencies:
   editorconfig-checker: 4.0.2
   lint-staged: 13.0.4
 
 devDependencies:
+  '@tsconfig/node16-strictest-esm': 1.0.3
   husky: 8.0.2
+  typescript: 4.9.3
 
 packages:
+
+  /@tsconfig/node16-strictest-esm/1.0.3:
+    resolution: {integrity: sha512-0/QTPDkKmE2dy0dMRstPCv4VJ+gUGgvMKzaWd5P3hgdlmPqYqe1pJxDGUlNYbSgUBlncIvvX+mIeZarokysNgg==}
+    dev: true
 
   /agent-base/6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -565,6 +573,12 @@ packages:
     resolution: {integrity: sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==}
     engines: {node: '>=10'}
     dev: false
+
+  /typescript/4.9.3:
+    resolution: {integrity: sha512-CIfGzTelbKNEnLpLdGFgdyKhG23CKdKgQPOBc+OUNrkJ2vr+KSzsSV5kq5iWhEQbok+quxgGzrAtGWCyU7tHnA==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: true
 
   /webidl-conversions/3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}

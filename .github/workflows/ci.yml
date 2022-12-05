@@ -11,4 +11,5 @@ jobs:
     - name: Setup Volta and Node.js
       uses: volta-cli/action@v3
     - run: npx pnpm install
+    - run: npx pnpm build
     - run: npx pnpm lint

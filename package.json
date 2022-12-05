@@ -4,10 +4,14 @@
 		"lint-staged": "^13.0.4"
 	},
 	"devDependencies": {
-		"husky": "^8.0.0"
+		"@tsconfig/node16-strictest-esm": "^1.0.3",
+		"husky": "^8.0.0",
+		"typescript": "^4.9.3"
 	},
 	"packageManager": "pnpm@7.17.1",
 	"scripts": {
+		"build": "pnpm build:src",
+		"build:src": "tsc --build src",
 		"lint": "pnpm lint:ec",
 		"lint:ec": "ec"
 	},
