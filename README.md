@@ -11,3 +11,4 @@ Lifecycle commands:
 | `npx pnpm build`         | build everything                        |
 | `npx pnpm lint`          | lint all files                          |
 | `npx pnpm lint-staged`   | lint all staged files                   |
+| `npx pnpm test`          | run unit tests                          |

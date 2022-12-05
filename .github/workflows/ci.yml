@@ -13,3 +13,4 @@ jobs:
     - run: npx pnpm install
     - run: npx pnpm build
     - run: npx pnpm lint
+    - run: npx pnpm test
