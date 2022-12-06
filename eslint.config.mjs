@@ -12,11 +12,10 @@ export default [
 	},
 	{
 		rules: {
-			'array-bracket-newline': 'off',
 			'array-element-newline': ['error', 'consistent'],
 			'arrow-parens': ['error', 'as-needed'],
 			'capitalized-comments': 'off',
-			'comma-dangle': 'off',
+			'comma-dangle': ['error', 'always-multiline'],
 			'dot-location': 'off',
 			'dot-notation': 'off',
 			'func-style': ['error', 'declaration'],
@@ -49,8 +48,7 @@ export default [
 			'padded-blocks': ['error', 'never'],
 			'prefer-destructuring': 'off',
 			'quote-props': ['error', 'consistent-as-needed'],
-			'quotes': 'off',
-			'semi': 'off',
+			'quotes': ['error', 'single'],
 			'sort-imports': ['error', { allowSeparatedGroups: true }],
 			'sort-keys': 'off',
 			'space-before-function-paren': ['error', 'never'],
