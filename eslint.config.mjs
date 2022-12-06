@@ -1,0 +1,78 @@
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+
+export default [
+	'eslint:all',
+	// 'plugin:@typescript-eslint/recommended',
+	{
+		ignores: [
+			'coverage/**',
+			'dist/**',
+		],
+	},
+	{
+		rules: {
+			'array-element-newline': ['error', 'consistent'],
+			'arrow-parens': ['error', 'as-needed'],
+			'capitalized-comments': 'off',
+			'comma-dangle': ['error', 'always-multiline'],
+			'dot-location': 'off',
+			'dot-notation': 'off',
+			'func-style': ['error', 'declaration'],
+			'function-call-argument-newline': ['error', 'consistent'],
+			'function-paren-newline': 'off',
+			'id-length': 'off',
+			'implicit-arrow-linebreak': 'off',
+			'indent': ['error', 'tab'],
+			'lines-around-comment': 'off',
+			'lines-between-class-members': 'off',
+			'max-len': ['error', 160],
+			'max-lines-per-function': ['error', 100],
+			'max-statements': ['error', 20],
+			'multiline-comment-style': 'off',
+			'multiline-ternary': 'off',
+			'no-confusing-arrow': 'off',
+			'no-console': 'off',
+			'no-extra-parens': 'off',
+			'no-magic-numbers': 'off',
+			'no-plusplus': 'off',
+			'no-shadow': 'off',
+			'no-tabs': 'off',
+			'no-ternary': 'off',
+			'no-undefined': 'off',
+			'no-underscore-dangle': 'off',
+			'object-curly-spacing': ['error', 'always'],
+			'object-property-newline': ['error', { allowAllPropertiesOnSameLine: true }],
+			'one-var': ['error', 'never'],
+			'operator-linebreak': ['error', 'after'],
+			'padded-blocks': ['error', 'never'],
+			'prefer-destructuring': 'off',
+			'quote-props': ['error', 'consistent-as-needed'],
+			'quotes': ['error', 'single'],
+			'sort-imports': ['error', { allowSeparatedGroups: true }],
+			'sort-keys': 'off',
+			'space-before-function-paren': ['error', 'never'],
+		},
+	},
+	{
+		files: [
+			'**/*.ts',
+			'**/*.cts',
+			'**/*.mts',
+		],
+		languageOptions: {
+			ecmaVersion: 2022,
+			parser: tsParser,
+		},
+		plugins: {
+			'@typescript-eslint': tsPlugin,
+		},
+		rules: {
+			'no-undef': 'off',
+			'no-unused-vars': 'off',
+			'no-use-before-define': 'off',
+			'@typescript-eslint/no-unused-vars': 'error',
+			'@typescript-eslint/no-use-before-define': ['error', 'nofunc'],
+		},
+	},
+];
