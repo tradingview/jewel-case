@@ -24,19 +24,19 @@ Distribute repository:
 jewel-case apply <repo-dir>
 ```
 #### Source dir layout
-Layout example: 
+Layout example:
 * `src`
-    * `beta`
-        * `1.0.19`
-    * `stable`
-        * `1.0.10`
-        * `1.0.11`
-        * `1.0.12`
-        * `1.0.13`
-        * `1.0.14`
-        * `1.0.15`
-        * `1.0.16`
-        * `1.0.9`
+	* `beta`
+		* `1.0.19`
+	* `stable`
+		* `1.0.10`
+		* `1.0.11`
+		* `1.0.12`
+		* `1.0.13`
+		* `1.0.14`
+		* `1.0.15`
+		* `1.0.16`
+		* `1.0.9`
 
 Artifacts have to be uploaded with settled build number. See [JFROG Documentation](https://www.jfrog.com/confluence/display/JFROG/UploadArtifact). Version file must contain that build number:
 ```
