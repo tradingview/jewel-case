@@ -1,12 +1,13 @@
 {
 	"extends": "../tsconfig-base.json",
-	"include": ["**/*"],
+	"include": ["**/*", "jewel-case.config.mjs"],
 	"exclude": ["**/*.spec.ts"],
 	"compilerOptions": {
 		"composite": true,
 		"declaration": true,
 		"module": "es2022",
 		"moduleResolution": "node16",
-		"outDir": "../dist"
+		"outDir": "../dist",
+		"sourceMap": true
 	}
 }

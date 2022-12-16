@@ -3,5 +3,10 @@ node_modules/
 # build output directories
 dist/
 
+# default output directory
+out/
+
 # coverage report directory
 /coverage/
+
+.vscode/.env
