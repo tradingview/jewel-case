@@ -1,8 +1,11 @@
 {
+	"type": "module",
 	"devDependencies": {
 		"@jest/globals": "^29.3.1",
 		"@tsconfig/node16-strictest-esm": "^1.0.3",
 		"@types/node": "16.18.1",
+		"@types/semver": "^7.3.13",
+		"@types/yargs": "^17.0.16",
 		"@typescript-eslint/eslint-plugin": "^5.45.1",
 		"@typescript-eslint/parser": "^5.45.1",
 		"cross-env": "^7.0.3",
@@ -31,5 +34,10 @@
 	},
 	"volta": {
 		"node": "16.18.1"
+	},
+	"dependencies": {
+		"s3-groundskeeper": "^0.2.2",
+		"semver": "^7.3.8",
+		"yargs": "^17.6.2"
 	}
 }
