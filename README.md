@@ -69,12 +69,18 @@ PS src> cat .\stable\1.0.10
 To configure exhaust You'll need `jewel-case.config.mjs` file in directory with rules configured like this:
 ```ts
 export default {
-	exhaust: [
-		{
-			type: 'msix-s3',
+	msixS3: {
+		msixName: 'TradingView',
+		appInstaller: {
+			name: 'TradingView',
+			host: 'https://tvd-packages.tradingview.com',
+			hoursBetweenUpdateChecks: 1,
+			packageName: 'TradingView.Desktop',
+			publisher: 'CN=&quot;TradingView, Inc.&quot;, O=&quot;TradingView, Inc.&quot;, S=Ohio, C=US',
 		},
-	],
+	},
 };
+
 ```
 
 Repository builders:
