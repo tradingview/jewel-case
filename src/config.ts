@@ -5,7 +5,7 @@ import { pathToFileURL } from 'url';
 import { cli } from './cli.js';
 import type { MsixS3Config } from './windows-repo-builder.js';
 
-let cfg: Config | undefined = undefined;
+let configurationInstance: Config | undefined = undefined;
 
 interface ExhaustConfig {
 	msixS3?: MsixS3Config;
@@ -33,15 +33,15 @@ class Config {
 		const S3_BUCKET = 'S3_BUCKET';
 		const GPG_KEY_NAME = 'GPG_KEY_NAME';
 
-		this.artifactoryHost = envToString(ARTIFACTORY_HOST) ?? cli.artifactoryHost;
-		this.artifactoryUser = envToString(ARTIFACTORY_USER) ?? cli.artifactoryUser;
-		this.artifactoryApiKey = envToString(ARTIFACTORY_API_KEY) ?? cli.artifactoryApiKey;
-		this.artifactoryProjectKey = cli.artifactoryProjectKey;
-		this.s3AccessKeyId = envToString(S3_ACCESS_KEY_ID) ?? cli.s3AccessKeyId;
-		this.s3SecretAccessKey = envToString(S3_SECRET_ACCESS_KEY) ?? cli.s3SecretAccessKey;
-		this.s3Region = envToString(S3_REGION) ?? cli.s3Region;
-		this.s3Bucket = envToString(S3_BUCKET) ?? cli.s3Bucket;
-		this.gpgKeyName = envToString(GPG_KEY_NAME) ?? cli.gpgKeyName;
+		this.artifactoryHost = envToString(ARTIFACTORY_HOST) ?? cli().artifactoryHost;
+		this.artifactoryUser = envToString(ARTIFACTORY_USER) ?? cli().artifactoryUser;
+		this.artifactoryApiKey = envToString(ARTIFACTORY_API_KEY) ?? cli().artifactoryApiKey;
+		this.artifactoryProjectKey = cli().artifactoryProjectKey;
+		this.s3AccessKeyId = envToString(S3_ACCESS_KEY_ID) ?? cli().s3AccessKeyId;
+		this.s3SecretAccessKey = envToString(S3_SECRET_ACCESS_KEY) ?? cli().s3SecretAccessKey;
+		this.s3Region = envToString(S3_REGION) ?? cli().s3Region;
+		this.s3Bucket = envToString(S3_BUCKET) ?? cli().s3Bucket;
+		this.gpgKeyName = envToString(GPG_KEY_NAME) ?? cli().gpgKeyName;
 	}
 
 	async init(): Promise<void> {
@@ -62,10 +62,19 @@ function envToString(envName: string): string | undefined {
 	return value;
 }
 
-export function configuration(): Config {
-	if (!cfg) {
-		cfg = new Config();
+export function initConfiguration(): Promise<void> {
+	if (configurationInstance) {
+		throw new Error('Configuration already initialized');
 	}
 
-	return cfg;
+	configurationInstance = new Config();
+	return configurationInstance.init();
+}
+
+export function configuration(): Config {
+	if (!configurationInstance) {
+		throw new Error('Configuration must be initialized before use');
+	}
+
+	return configurationInstance;
 }

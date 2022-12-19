@@ -5,9 +5,6 @@ import { configuration } from './config.js';
 import { WindowsRepoBuilder } from './windows-repo-builder.js';
 
 export async function plan(outDir: string, sourceDir: string): Promise<void> {
-	console.log(outDir);
-	console.log(sourceDir);
-
 	await artifactoryHelper().init();
 	const repo = await scanSourceDir(sourceDir);
 	const builders = createBuilders(repo, outDir);

@@ -1,6 +1,9 @@
 import yargs from 'yargs';
 
-export const cli = await yargs(process.argv.slice(2))
+type CliType = Awaited<ReturnType<typeof yargsParsePromise.parse>>;
+let cliInstance: CliType | undefined = undefined;
+
+const yargsParsePromise = yargs(process.argv.slice(2))
 	.option('artifactory-host', { description: 'JFrog Artifactory host. Alternale env:ARTIFACTORY_HOST', group: 'JFrog Artifactory:', string: true })
 	.option('artifactory-user', { description: 'JFrog Artifactory username. Alternale env:ARTIFACTORY_USER', group: 'JFrog Artifactory:', string: true })
 	.option('artifactory-api-key', { description: 'JFrog Artifactory ApiKey. Alternale env:ARTIFACTORY_API_KEY', group: 'JFrog Artifactory:', string: true })
@@ -16,5 +19,24 @@ export const cli = await yargs(process.argv.slice(2))
 	})
 	.command('apply <repo-dir>', 'Deploy repositories', yargs => {
 		yargs.positional('repo-dir', { describe: 'Source dir wich contains repository prepeared before. Only for S3 deploying', type: 'string' });
-	})
-	.parse();
+	});
+
+export async function initCli(): Promise<void> {
+	if (cliInstance) {
+		throw new Error('CLI already initialized');
+	}
+
+	const tmp = await yargsParsePromise.parse();
+
+	if (!cliInstance) {
+		cliInstance = tmp;
+	}
+}
+
+export function cli(): CliType {
+	if (!cliInstance) {
+		throw new Error('CLI must be initialized before use');
+	}
+
+	return cliInstance;
+}
