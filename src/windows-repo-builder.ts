@@ -10,13 +10,15 @@ import { createDir, createFile, createMetapointerContent } from './utils.js';
 import { configuration } from './config.js';
 
 export interface MsixS3Config {
-	msixName: string,
-	appInstaller: {
-		name: string,
-		host: string,
-		hoursBetweenUpdateChecks: number,
-		packageName: string,
-		publisher: string
+	msixS3: {
+		msixName: string,
+		appInstaller: {
+			name: string,
+			host: string,
+			hoursBetweenUpdateChecks: number,
+			packageName: string,
+			publisher: string
+		}
 	}
 }
 
@@ -35,7 +37,7 @@ export class WindowsRepoBuilder implements RepoBuilder {
 		const msixConfig = configuration().exhaust?.msixS3;
 
 		if (msixConfig) {
-			this.config = msixConfig;
+			this.config = { msixS3: msixConfig };
 		} else {
 			throw new Error('MsixS3Config must be specified');
 		}
@@ -95,37 +97,37 @@ export class WindowsRepoBuilder implements RepoBuilder {
 		createDir(latestDir);
 
 		this.createAppInstallerFile(latestDir, `${highest.version}.${highest.buildNumber}`, channel);
-		await fs.promises.copyFile(path.join(this.out, channel, highest.version, 'win32', this.arch, `${this.config.msixName}.msix`),
-			path.join(latestDir, `${this.config.msixName}.msix`));
+		await fs.promises.copyFile(path.join(this.out, channel, highest.version, 'win32', this.arch, `${this.config.msixS3.msixName}.msix`),
+			path.join(latestDir, `${this.config.msixS3.msixName}.msix`));
 	}
 
 	private createAppInstallerFile(out: string, version: string, channel: string): void {
 		const appInstallerContent = this.appInstallerFileContent(version, channel);
 		const adjustedAppInstallerContent = adjustAppinstallerSize(appInstallerContent);
 
-		createFile(`${out}/${this.config.appInstaller.name}.appinstaller`, adjustedAppInstallerContent);
+		createFile(`${out}/${this.config.msixS3.appInstaller.name}.appinstaller`, adjustedAppInstallerContent);
 	}
 
 	private appInstallerFileContent(version: string, channel: string): string {
 		return `<?xml version="1.0" encoding="utf-8"?>
 		<AppInstaller
-			Uri="${this.config.appInstaller.host}/${channel}/latest/win32/${this.arch}/${this.config.appInstaller.name}.appinstaller"
+			Uri="${this.config.msixS3.appInstaller.host}/${channel}/latest/win32/${this.arch}/${this.config.msixS3.appInstaller.name}.appinstaller"
 			Version="${version}"
 			xmlns="http://schemas.microsoft.com/appx/appinstaller/2017/2">
 			<MainPackage
-			Name="${this.config.appInstaller.packageName}"
+			Name="${this.config.msixS3.appInstaller.packageName}"
 			Version="${version}"
-			Publisher="${this.config.appInstaller.publisher}"
+			Publisher="${this.config.msixS3.appInstaller.publisher}"
 			ProcessorArchitecture="x64"
-			Uri="${this.config.appInstaller.host}/${channel}/${version}/win32/${this.arch}/${this.config.msixName}.msix" />
+			Uri="${this.config.msixS3.appInstaller.host}/${channel}/${version}/win32/${this.arch}/${this.config.msixS3.msixName}.msix" />
 			<UpdateSettings>
-				<OnLaunch HoursBetweenUpdateChecks="${this.config.appInstaller.hoursBetweenUpdateChecks}" />
+				<OnLaunch HoursBetweenUpdateChecks="${this.config.msixS3.appInstaller.hoursBetweenUpdateChecks}" />
 			</UpdateSettings>
 		</AppInstaller>\n`;
 	}
 
 	private createMsix(out: string, md5: string): void {
-		createFile(`${out}/${this.config.msixName}.msix`, createMetapointerContent(md5));
+		createFile(`${out}/${this.config.msixS3.msixName}.msix`, createMetapointerContent(md5));
 	}
 }
 

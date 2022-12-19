@@ -7,9 +7,7 @@ import type { MsixS3Config } from './windows-repo-builder.js';
 
 let configurationInstance: Config | undefined = undefined;
 
-interface ExhaustConfig {
-	msixS3?: MsixS3Config;
-}
+type ExhaustConfig = MsixS3Config;
 
 class Config {
 	artifactoryHost: string | undefined;
