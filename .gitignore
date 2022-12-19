@@ -10,3 +10,5 @@ out/
 /coverage/
 
 .vscode/.env
+
+jewel-case.config.mjs

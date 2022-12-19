@@ -1,22 +1,44 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { TextEncoder } from 'util';
 
 import type { Artifact, ArtifactoryHelper } from './artifactory-utils.js';
 import type { Package, Repo, RepoBuilder } from './repo-builder.js';
 
 import { createDir, createFile, createMetapointerContent } from './utils.js';
+import { configuration } from './config.js';
+
+export interface MsixS3Config {
+	msixName: string,
+	appInstaller: {
+		name: string,
+		host: string,
+		hoursBetweenUpdateChecks: number,
+		packageName: string,
+		publisher: string
+	}
+}
 
 export class WindowsRepoBuilder implements RepoBuilder {
 	private readonly artifactory: ArtifactoryHelper;
 	private readonly repo: Repo;
 	private readonly out: string;
+	private readonly config: MsixS3Config;
 	private readonly arch: string = 'x64';
 
 	constructor(artifactory: ArtifactoryHelper, repo: Repo, out: string) {
 		this.artifactory = artifactory;
 		this.repo = repo;
 		this.out = out;
+
+		const msixConfig = configuration().exhaust?.msixS3;
+
+		if (msixConfig) {
+			this.config = msixConfig;
+		} else {
+			throw new Error('MsixS3Config must be specified');
+		}
 	}
 
 	public build(): Promise<void> {
@@ -61,7 +83,7 @@ export class WindowsRepoBuilder implements RepoBuilder {
 			value.artifacts.forEach(artifact => {
 				const msixDir = path.join(this.out, channel, value.version, 'win32', this.arch);
 				createDir(msixDir);
-				createMsix(msixDir, artifact.md5);
+				this.createMsix(msixDir, artifact.md5);
 			});
 		});
 	}
@@ -69,42 +91,42 @@ export class WindowsRepoBuilder implements RepoBuilder {
 	private async makeLatest(channel: string, highest: Package): Promise<void> {
 		console.log('WindowsBuilder: makeRelease');
 
-		const latestDir = path.join(this.out, channel, 'latest', 'win32');
+		const latestDir = path.join(this.out, channel, 'latest', 'win32', this.arch);
 		createDir(latestDir);
 
 		this.createAppInstallerFile(latestDir, `${highest.version}.${highest.buildNumber}`, channel);
-		await fs.promises.copyFile(path.join(this.out, channel, highest.version, 'win32', this.arch, 'TradingView.msix'),
-			path.join(latestDir, 'TradingView.msix'));
+		await fs.promises.copyFile(path.join(this.out, channel, highest.version, 'win32', this.arch, `${this.config.msixName}.msix`),
+			path.join(latestDir, `${this.config.msixName}.msix`));
 	}
 
 	private createAppInstallerFile(out: string, version: string, channel: string): void {
 		const appInstallerContent = this.appInstallerFileContent(version, channel);
 		const adjustedAppInstallerContent = adjustAppinstallerSize(appInstallerContent);
 
-		createFile(`${out}/TradingView.appinstaller`, adjustedAppInstallerContent);
+		createFile(`${out}/${this.config.appInstaller.name}.appinstaller`, adjustedAppInstallerContent);
 	}
 
 	private appInstallerFileContent(version: string, channel: string): string {
 		return `<?xml version="1.0" encoding="utf-8"?>
 		<AppInstaller
-			Uri="https://tvd-packages.tradingview.com/${channel}/latest/win32/TradingView.appinstaller"
+			Uri="${this.config.appInstaller.host}/${channel}/latest/win32/${this.arch}/${this.config.appInstaller.name}.appinstaller"
 			Version="${version}"
 			xmlns="http://schemas.microsoft.com/appx/appinstaller/2017/2">
 			<MainPackage
-			Name="TradingView.Desktop"
+			Name="${this.config.appInstaller.packageName}"
 			Version="${version}"
-			Publisher="CN=&quot;TradingView, Inc.&quot;, O=&quot;TradingView, Inc.&quot;, S=Ohio, C=US"
+			Publisher="${this.config.appInstaller.publisher}"
 			ProcessorArchitecture="x64"
-			Uri="https://tvd-packages.tradingview.com/${channel}/${version}/win32/${this.arch}/TradingView.msix" />
+			Uri="${this.config.appInstaller.host}/${channel}/${version}/win32/${this.arch}/${this.config.msixName}.msix" />
 			<UpdateSettings>
-				<OnLaunch HoursBetweenUpdateChecks="1" />
+				<OnLaunch HoursBetweenUpdateChecks="${this.config.appInstaller.hoursBetweenUpdateChecks}" />
 			</UpdateSettings>
 		</AppInstaller>\n`;
 	}
-}
 
-function createMsix(out: string, md5: string): void {
-	createFile(`${out}/TradingView.msix`, createMetapointerContent(md5));
+	private createMsix(out: string, md5: string): void {
+		createFile(`${out}/${this.config.msixName}.msix`, createMetapointerContent(md5));
+	}
 }
 
 function adjustAppinstallerSize(appInstallerContent: string): string {

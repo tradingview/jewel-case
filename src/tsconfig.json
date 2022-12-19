@@ -1,6 +1,5 @@
 {
 	"extends": "../tsconfig-base.json",
-	"include": ["**/*", "jewel-case.config.mjs"],
 	"exclude": ["**/*.spec.ts"],
 	"compilerOptions": {
 		"composite": true,

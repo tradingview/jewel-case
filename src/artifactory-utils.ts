@@ -74,8 +74,8 @@ export class ArtifactoryHelper {
 		return this.artifactsByBuildNumber(buildNumber, 'mac-shell');
 	}
 
-	public windowsArtifactsByBuildNumber(buildNumber: string): Promise<Artifact[]> {
-		return this.artifactsByBuildNumber(buildNumber, 'windows, code-signing');
+	public async windowsArtifactsByBuildNumber(buildNumber: string): Promise<Artifact[]> {
+		return (await this.artifactsByBuildNumber(buildNumber, 'windows, code-signing')).filter(value => value.name.endsWith('.msix'));
 	}
 
 	public async debArtifactsByBuildNumber(buildNumber: string): Promise<Artifact[]> {
@@ -104,7 +104,7 @@ export class ArtifactoryHelper {
 		}
 
 		const apiEndpoint = this.artifactoryClient?.resolveUri('api/build');
-		const buildsEndpoint = `${apiEndpoint}/tradingview-desktop`;
+		const buildsEndpoint = `${apiEndpoint}/${this.project}`;
 
 		const buildTimes = (buildUri: string): Date[] => {
 			const times: Date[] = [];

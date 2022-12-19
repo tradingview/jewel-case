@@ -1,8 +1,15 @@
-import * as configFile from './jewel-case.config.mjs';
+import fs from 'fs';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 import { cli } from './cli.js';
+import type { MsixS3Config } from './windows-repo-builder.js';
 
 let cfg: Config | undefined = undefined;
+
+interface ExhaustConfig {
+	msixS3?: MsixS3Config;
+}
 
 class Config {
 	artifactoryHost: string | undefined;
@@ -14,7 +21,7 @@ class Config {
 	s3Region: string | undefined;
 	s3Bucket: string | undefined;
 	gpgKeyName: string | undefined;
-	exhaust = configFile.default.exhaust;
+	exhaust: ExhaustConfig | undefined;
 
 	constructor() {
 		const ARTIFACTORY_HOST = 'ARTIFACTORY_HOST';
@@ -35,6 +42,17 @@ class Config {
 		this.s3Region = envToString(S3_REGION) ?? cli.s3Region;
 		this.s3Bucket = envToString(S3_BUCKET) ?? cli.s3Bucket;
 		this.gpgKeyName = envToString(GPG_KEY_NAME) ?? cli.gpgKeyName;
+	}
+
+	async init(): Promise<void> {
+		const resolvedPath = path.resolve(process.cwd(), 'jewel-case.config.mjs');
+		if (resolvedPath && fs.existsSync(resolvedPath)) {
+			this.exhaust = (await import(pathToFileURL(resolvedPath).toString())).default as ExhaustConfig;
+
+			return;
+		}
+
+		throw new Error('jewel-case.config.mjs not found');
 	}
 }
 
