@@ -1,8 +1,6 @@
 import { exit } from 'process';
 import yargs from 'yargs';
 
-import { initConfiguration } from './config.mjs';
-
 import { apply, plan } from './index.mjs';
 import { getMessageOfError } from './utils.mjs';
 
@@ -36,7 +34,6 @@ export function cli(): CliType {
 
 async function main(): Promise<number> {
 	await initCli();
-	await initConfiguration(cli().config);
 
 	const command = cli()._[0];
 

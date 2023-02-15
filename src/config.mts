@@ -1,15 +1,13 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 
-let configurationInstance: Config | undefined = undefined;
-
 interface IOConfig {
 	sourceDir: string;
 	repoOut: string;
 	repoDir: string;
 }
 
-class Config {
+export class Config {
 	path: string;
 	configFile: IOConfig | undefined;
 
@@ -23,19 +21,10 @@ class Config {
 	}
 }
 
-export function initConfiguration(path: string): Promise<void> {
-	if (configurationInstance) {
-		throw new Error('Configuration already initialized');
-	}
-
-	configurationInstance = new Config(path);
-	return configurationInstance.init();
-}
-
-export function configuration(): Config {
-	if (!configurationInstance) {
-		throw new Error('Configuration must be initialized before use');
-	}
+export async function createConfig(path: string): Promise<Config> {
+	const configurationInstance = new Config(path);
+	await configurationInstance.init();
 
 	return configurationInstance;
 }
+
