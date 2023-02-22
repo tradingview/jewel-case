@@ -8,8 +8,8 @@
 			"name": "Start",
 			"runtimeArgs": [
 			],
+			"program": "${workspaceFolder}/dist/cli.mjs",
 			"args" : [
-				"${workspaceFolder}/dist/cli.mjs",
 				"plan"
 			]
 		}
