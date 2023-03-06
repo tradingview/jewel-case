@@ -30,11 +30,10 @@ function generatePackage() {
 			type: 'git',
 			url: 'https://github.com/tradingview/jewel-case',
 		},
-		main: 'index.mjs',
+		exports: './index.mjs',
 		bin: {
 			jewelcase: 'cli.mjs',
 		},
-		type: 'module',
 		dependencies,
 	});
 

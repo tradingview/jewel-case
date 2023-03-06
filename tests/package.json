@@ -1,0 +1,9 @@
+{
+	"private": true,
+	"scripts": {
+		"start": "ts-node-esm index.mts"
+	},
+	"dependencies": {
+		"jewel-case": "workspace:../dist"
+	}
+}
