@@ -28,7 +28,7 @@
 		"lint": "pnpm lint:ec && pnpm lint:eslint",
 		"lint:ec": "ec",
 		"lint:eslint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs .",
-		"test": "jest --passWithNoTests && cd tests && pnpm start"
+		"test": "jest --projects src && cd tests && pnpm start"
 	},
 	"volta": {
 		"node": "16.18.1"
