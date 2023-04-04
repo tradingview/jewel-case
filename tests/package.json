@@ -1,7 +1,7 @@
 {
 	"private": true,
 	"scripts": {
-		"start": "ts-node-esm index.mts"
+		"start": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
 	},
 	"dependencies": {
 		"jewel-case": "workspace:../dist"
