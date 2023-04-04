@@ -31,7 +31,8 @@
 		"test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --projects src && pnpm --filter ./tests start"
 	},
 	"volta": {
-		"node": "16.18.1"
+		"node": "16.18.1",
+		"pnpm": "7.17.1"
 	},
 	"dependencies": {
 		"yargs": "^17.6.2"
