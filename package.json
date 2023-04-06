@@ -6,7 +6,6 @@
 		"@types/yargs": "^17.0.16",
 		"@typescript-eslint/eslint-plugin": "^5.45.1",
 		"@typescript-eslint/parser": "^5.45.1",
-		"cross-env": "^7.0.3",
 		"editorconfig-checker": "^4.0.2",
 		"eslint": "^8.29.0",
 		"husky": "^8.0.0",
@@ -27,8 +26,8 @@
 		"build:src": "tsc --build src && node tools/package.mjs",
 		"lint": "pnpm lint:ec && pnpm lint:eslint .",
 		"lint:ec": "ec",
-		"lint:eslint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs",
-		"test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --projects src && pnpm --filter ./tests start"
+		"lint:eslint": "ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs",
+		"test": "NODE_OPTIONS=--experimental-vm-modules jest --projects src && pnpm --filter ./tests start"
 	},
 	"volta": {
 		"node": "16.18.1",

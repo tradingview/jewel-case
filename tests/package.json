@@ -1,7 +1,7 @@
 {
 	"private": true,
 	"scripts": {
-		"start": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
+		"start": "NODE_OPTIONS=--experimental-vm-modules jest"
 	},
 	"dependencies": {
 		"jewel-case": "workspace:../dist"
