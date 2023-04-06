@@ -25,9 +25,9 @@
 	"scripts": {
 		"build": "pnpm build:src",
 		"build:src": "tsc --build src && node tools/package.mjs",
-		"lint": "pnpm lint:ec && pnpm lint:eslint",
+		"lint": "pnpm lint:ec && pnpm lint:eslint .",
 		"lint:ec": "ec",
-		"lint:eslint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs .",
+		"lint:eslint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs",
 		"test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --projects src && pnpm --filter ./tests start"
 	},
 	"volta": {
