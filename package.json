@@ -22,12 +22,15 @@
 	"packageManager": "pnpm@7.17.1",
 	"private": true,
 	"scripts": {
-		"build": "pnpm build:src",
-		"build:src": "tsc --build src && node tools/package.mjs",
+		"jest": "jest",
+		"build": "pnpm src:build",
 		"lint": "pnpm lint:ec && pnpm lint:eslint .",
 		"lint:ec": "ec",
 		"lint:eslint": "ESLINT_USE_FLAT_CONFIG=true eslint -c eslint.config.mjs",
-		"test": "NODE_OPTIONS=--experimental-vm-modules jest --projects src && pnpm --filter ./tests start"
+		"test": "pnpm src:test && pnpm tests:start",
+		"src:build": "tsc --build src && node tools/package.mjs",
+		"src:test": "NODE_OPTIONS=--experimental-vm-modules jest --projects src",
+		"tests:start": "pnpm --filter ./tests start"
 	},
 	"volta": {
 		"node": "16.18.1",

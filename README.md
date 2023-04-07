@@ -11,4 +11,6 @@ Lifecycle commands:
 | `pnpm build`         | build everything                        |
 | `pnpm lint`          | lint all files                          |
 | `pnpm lint-staged`   | lint all staged files                   |
-| `pnpm test`          | run unit tests                          |
+| `pnpm src:test`      | run unit tests                          |
+| `pnpm tests:start`   | run integration tests                   |
+| `pnpm test`          | run all tests                           |
