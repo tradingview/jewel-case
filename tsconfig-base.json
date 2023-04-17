@@ -1,7 +1,10 @@
 {
-	"extends": "@tsconfig/node16-strictest-esm/tsconfig.json",
+	"extends": [
+		"@tsconfig/node16/tsconfig.json",
+		"@tsconfig/strictest/tsconfig.json",
+		"@tsconfig/esm/tsconfig.json"
+	],
 	"compilerOptions": {
-		"ignoreDeprecations": "5.0",
 		"module": "es2022",
 		"moduleResolution": "node16"
 	}

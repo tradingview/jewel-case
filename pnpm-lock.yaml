@@ -5,7 +5,9 @@ importers:
   .:
     specifiers:
       '@jest/globals': ^29.3.1
-      '@tsconfig/node16-strictest-esm': ^1.0.3
+      '@tsconfig/esm': ^1.0.2
+      '@tsconfig/node16': ^1.0.3
+      '@tsconfig/strictest': ^2.0.0
       '@types/node': 16.18.1
       '@types/yargs': ^17.0.16
       '@typescript-eslint/eslint-plugin': ^5.45.1
@@ -23,7 +25,9 @@ importers:
       yargs: 17.6.2
     devDependencies:
       '@jest/globals': 29.3.1
-      '@tsconfig/node16-strictest-esm': 1.0.3
+      '@tsconfig/esm': 1.0.2
+      '@tsconfig/node16': 1.0.3
+      '@tsconfig/strictest': 2.0.0
       '@types/node': 16.18.1
       '@types/yargs': 17.0.20
       '@typescript-eslint/eslint-plugin': 5.45.1_du7ehko5z56zwldgvkicxmpcbu
@@ -739,6 +743,10 @@ packages:
       '@sinonjs/commons': 1.8.6
     dev: true
 
+  /@tsconfig/esm/1.0.2:
+    resolution: {integrity: sha512-awiISx+G4L+7k97nKnfA5QF6rukawiuycMPfASFHG/0fqjrUlYBuNISy3Yjl1SHIpVi57lYf7dc6L/FoQQCKcA==}
+    dev: true
+
   /@tsconfig/node10/1.0.9:
     resolution: {integrity: sha512-jNsYVVxU8v5g43Erja32laIDHXeoNvFEpX33OK4d6hljo3jDhCBDhx5dhCCTMWUojscpAagGiRkBKxpdl9fxqA==}
     dev: true
@@ -751,12 +759,12 @@ packages:
     resolution: {integrity: sha512-ysT8mhdixWK6Hw3i1V2AeRqZ5WfXg1G43mqoYlM2nc6388Fq5jcXyr5mRsqViLx/GJYdoL0bfXD8nmF+Zn/Iow==}
     dev: true
 
-  /@tsconfig/node16-strictest-esm/1.0.3:
-    resolution: {integrity: sha512-0/QTPDkKmE2dy0dMRstPCv4VJ+gUGgvMKzaWd5P3hgdlmPqYqe1pJxDGUlNYbSgUBlncIvvX+mIeZarokysNgg==}
-    dev: true
-
   /@tsconfig/node16/1.0.3:
     resolution: {integrity: sha512-yOlFc+7UtL/89t2ZhjPvvB/DeAr3r+Dq58IgzsFkOAvVC6NMJXmCGjbptdXdR9qsX7pKcTL+s87FtYREi2dEEQ==}
+    dev: true
+
+  /@tsconfig/strictest/2.0.0:
+    resolution: {integrity: sha512-E0dpiZNdwO20c8d3seh7OmjAvDpwoRkTcU6M8cvggzB45Bd45tyTU2XJeA5Wfq+8NzVGhunvqOJ30AjSkywMXA==}
     dev: true
 
   /@types/babel__core/7.1.20:
