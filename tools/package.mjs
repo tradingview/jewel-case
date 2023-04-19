@@ -23,7 +23,7 @@ function generatePackage() {
 		name: 'jewel-case',
 		version,
 		author: 'TradingView, Inc.',
-		description: 'Application distribution',
+		description: 'jewel-case: application releases as a code',
 		license: 'MIT',
 		keywords: ['msix', 'deb', 's3', 'dmg'],
 		repository: {
