@@ -1,12 +1,11 @@
 {
 	"extends": "../tsconfig-base.json",
-	"include": ["**/*"],
-	"exclude": ["**/*.spec.ts"],
+	"include": ["**/*.mts"],
+	"exclude": ["**/*.spec.mts"],
 	"compilerOptions": {
 		"composite": true,
 		"declaration": true,
-		"module": "es2022",
-		"moduleResolution": "node16",
-		"outDir": "../dist"
+		"outDir": "../dist",
+		"sourceMap": true
 	}
 }

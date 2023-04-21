@@ -1,15 +1,21 @@
-export default {
-	// A preset that is used as a base for Jest's configuration
-	preset: 'ts-jest/presets/default-esm',
+import base from '../jest.config.mjs';
 
-	// Automatically clear mock calls, instances, contexts and results before every test
-	clearMocks: true,
+export default {
+	...base,
 
 	// Indicates whether the coverage information should be collected while executing the test
 	collectCoverage: true,
 
+	collectCoverageFrom: ['**/*.mts'],
+
+	coveragePathIgnorePatterns: [
+		'src/cli.mts',
+		'src/config.mts',
+		'src/utils.mts',
+	],
+
 	// The directory where Jest should output its coverage files
-	coverageDirectory: 'coverage',
+	coverageDirectory: '<rootDir>/../coverage',
 
 	// Indicates which provider should be used to instrument code for coverage
 	coverageProvider: 'v8',
@@ -23,10 +29,4 @@ export default {
 			statements: 100,
 		},
 	},
-
-	// A list of paths to directories that Jest should use to search for files in
-	roots: ['./src'],
-
-	// The number of seconds after which a test is considered as slow and reported as such in the results.
-	slowTestThreshold: 10,
 };
