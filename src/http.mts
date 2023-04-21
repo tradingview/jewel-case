@@ -44,7 +44,10 @@ export async function requestStream(url: string, method: string, requestData?: R
 				if (requestData.headers) {
 					for (const key of Object.getOwnPropertyNames(requestData.headers)) {
 						const value = requestData.headers[key];
-						req.setHeader(key, value);
+
+						if (value) {
+							req.setHeader(key, value);
+						}
 					}
 				}
 

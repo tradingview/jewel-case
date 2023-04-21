@@ -15,7 +15,7 @@ async function main(): Promise<number> {
 	const args: CommandLineArgs = await yargsParsePromise.parse();
 	const command = args._[0];
 
-	const config = await createConfig(cli().config);
+	const config = await createConfig(args.config);
 
 	if (command === 'plan') {
 		plan(config);
