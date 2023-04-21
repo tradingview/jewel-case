@@ -5,7 +5,6 @@
 		"@tsconfig/esm/tsconfig.json"
 	],
 	"compilerOptions": {
-		"module": "es2022",
 		"moduleResolution": "node16"
 	}
 }
