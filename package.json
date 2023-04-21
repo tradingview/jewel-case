@@ -2,9 +2,9 @@
 	"devDependencies": {
 		"@jest/globals": "^29.3.1",
 		"@tsconfig/esm": "^1.0.2",
-		"@tsconfig/node16": "^1.0.3",
+		"@tsconfig/node18": "^2.0.0",
 		"@tsconfig/strictest": "^2.0.0",
-		"@types/node": "16.18.1",
+		"@types/node": "18.13.0",
 		"@types/yargs": "^17.0.16",
 		"@typescript-eslint/eslint-plugin": "^5.45.1",
 		"@typescript-eslint/parser": "^5.45.1",
@@ -19,10 +19,9 @@
 		"typescript": "^5.0.4"
 	},
 	"engines": {
-		"node": "^16.18.1",
-		"pnpm": "^7.17.1"
+		"node": "^18.13.0"
 	},
-	"packageManager": "pnpm@7.17.1",
+	"packageManager": "pnpm@8.3.1",
 	"private": true,
 	"scripts": {
 		"jest": "jest",
@@ -36,8 +35,8 @@
 		"tests:start": "pnpm --filter ./tests start"
 	},
 	"volta": {
-		"node": "16.18.1",
-		"pnpm": "7.17.1"
+		"node": "18.13.0",
+		"pnpm": "8.3.1"
 	},
 	"dependencies": {
 		"yargs": "^17.6.2"
