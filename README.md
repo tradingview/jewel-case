@@ -14,3 +14,7 @@ Lifecycle commands:
 | `pnpm src:test`      | run unit tests                          |
 | `pnpm tests:start`   | run integration tests                   |
 | `pnpm test`          | run all tests                           |
+
+Recommended Visual Studio Code extensions:
+
+- [`Orta.vscode-jest`](https://marketplace.visualstudio.com/items?itemName=Orta.vscode-jest)
