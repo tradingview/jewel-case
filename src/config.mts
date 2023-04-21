@@ -1,5 +1,6 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
+import type { DebConfig } from './deb/deb-config.mjs';
 
 interface IOConfig {
 	sourceDir: string;
@@ -9,7 +10,7 @@ interface IOConfig {
 
 export class Config {
 	path: string;
-	configFile: IOConfig | undefined;
+	config: (IOConfig & DebConfig) | undefined;
 
 	constructor(path: string) {
 		this.path = path;
@@ -17,7 +18,7 @@ export class Config {
 
 	async init(): Promise<void> {
 		const resolvedPath = path.resolve(this.path);
-		this.configFile = (await import(pathToFileURL(resolvedPath).toString())).default as IOConfig;
+		this.config = (await import(pathToFileURL(resolvedPath).toString())).default as (IOConfig & DebConfig);
 	}
 }
 

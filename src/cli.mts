@@ -1,7 +1,7 @@
 import { exit } from 'process';
 import yargs from 'yargs';
 
-import { apply, plan } from './index.mjs';
+import { apply, createConfig, plan } from './index.mjs';
 import { getMessageOfError } from './utils.mjs';
 
 type CliType = Awaited<ReturnType<typeof yargsParsePromise.parse>>;
@@ -37,12 +37,14 @@ async function main(): Promise<number> {
 
 	const command = cli()._[0];
 
+	const config = await createConfig(cli().config);
+
 	if (command === 'plan') {
-		plan();
+		plan(config);
 	}
 
 	if (command === 'apply') {
-		apply();
+		apply(config);
 	}
 
 	return 0;
