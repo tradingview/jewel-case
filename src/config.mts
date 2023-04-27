@@ -1,16 +1,22 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
-import type { DebConfig } from './deb/deb-config.mjs';
 
-interface IOConfig {
-	sourceDir: string;
-	repoOut: string;
-	repoDir: string;
+import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
+import type { ArtifactsProviderConfig } from './artifacts-provider-config.mjs';
+import type { Repo } from './repo.mjs';
+
+interface BaseConfig {
+	base: {
+		out: string;
+		repo: Repo;
+	}
 }
 
-export class Config {
-	path: string;
-	config: (IOConfig & DebConfig) | undefined;
+export type Config = BaseConfig & DebBuilderConfig & ArtifactsProviderConfig;
+
+export class ConfigProvider {
+	private path: string;
+	private configInstance: Config | undefined;
 
 	constructor(path: string) {
 		this.path = path;
@@ -18,14 +24,22 @@ export class Config {
 
 	async init(): Promise<void> {
 		const resolvedPath = path.resolve(this.path);
-		this.config = (await import(pathToFileURL(resolvedPath).toString())).default as (IOConfig & DebConfig);
+		this.configInstance = (await import(pathToFileURL(resolvedPath).toString())).default as Config;
+	}
+
+	get config(): Config {
+		if (!this.configInstance) {
+			throw new Error('Config not initialized');
+		}
+
+		return this.configInstance;
 	}
 }
 
-export async function createConfig(path: string): Promise<Config> {
-	const configurationInstance = new Config(path);
-	await configurationInstance.init();
+export async function createConfigProvider(path: string): Promise<ConfigProvider> {
+	const configProviderInstance = new ConfigProvider(path);
+	await configProviderInstance.init();
 
-	return configurationInstance;
+	return configProviderInstance;
 }
 

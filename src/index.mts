@@ -1,11 +1,27 @@
-import { Config } from './config.mjs';
+import type { Config } from './config.mjs';
+import type { IBuilder } from './ibuilder.mjs';
+import { JfrogArtifactsProvider } from './jfrog/jfrog-artifacts-provider.mjs';
+import { DebBuilder } from './deb/deb-builder.mjs';
 
-export { Config, createConfig } from './config.mjs';
+export { type Config, createConfigProvider  } from './config.mjs';
 
-export function plan(config: Config): void {
+export async function plan(config: Config): Promise<void> {
+	const artifactsProvider = new JfrogArtifactsProvider(config);
+
+	let builders: IBuilder[] = [];
+	
+	if (config.debBuilder) {
+		builders.push(new DebBuilder(artifactsProvider, config));
+	}
+
+	for (const builder of builders) {
+		await builder.plan();
+	}
+
 	console.log('plan()');
 }
 
 export function apply(config: Config): void {
+	config;
 	console.log('apply()');
 }

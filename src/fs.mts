@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync, existsSync} from 'fs';
+import { writeFileSync, mkdirSync, existsSync, rmdirSync } from 'fs';
 
 export function createFile(path: string, content: string): void {
 	const dirPath = path.split('/').slice(0, -1).join('/');
@@ -11,6 +11,12 @@ export function createFile(path: string, content: string): void {
 export function createDir(dirName: string): void {
 	if (!existsSync(dirName)) {
 		mkdirSync(dirName, { recursive: true });
+	}
+}
+
+export function removeDir(dirName: string): void {
+	if (existsSync(dirName)) {
+		rmdirSync(dirName, {recursive: true});
 	}
 }
 

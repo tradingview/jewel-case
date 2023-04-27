@@ -1,6 +1,8 @@
 import { type ArtifactoryClient, createArtifactoryClient } from 's3-groundskeeper';
 
-import { get } from './http.mjs';
+import { get } from '../http.mjs';
+import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
+import type { ArtifactsProviderConfig } from '../artifacts-provider-config.mjs';
 
 export interface BuildsList {
 	buildsNumbers: {
@@ -17,28 +19,24 @@ export interface BuildInfo {
 	}
 }
 
-export interface Artifact {
-	type : string,
-	sha1 : string,
-	sha256 : string,
-	md5 : string,
-	name : string
-}
-
-export class ArtifactoryHelper {
+export class JfrogArtifactsProvider implements ArtifactsProvider {
 	private artifactoryClient: ArtifactoryClient;
 	private buildsList?: BuildsList;
 
-	constructor(host: string, apiKey: string, user: string) {
-		this.artifactoryClient = createArtifactoryClient({protocol: 'https', host, apiKey, user});
+	private readonly config: ArtifactsProviderConfig;
+
+	constructor(config: ArtifactsProviderConfig) {
+		this.config = config;		
+		this.artifactoryClient = createArtifactoryClient({
+			protocol: this.config.artifactsProvider.protocol,
+			host: this.config.artifactsProvider.host,
+			apiKey: this.config.artifactsProvider.apiKey, 
+			user: this.config.artifactsProvider.user
+		});
 	}
 
-	public client(): ArtifactoryClient {
-		return this.artifactoryClient;
-	}
-
-	public async artifactsByBuildNumber(project: string, buildNumber: string): Promise<Artifact[]> {
-		const buildInfos = await this.buildInfosByNumber(project, buildNumber);
+	public async artifactsByBuildNumber(buildNumber: string): Promise<Artifact[]> {
+		const buildInfos = await this.buildInfosByNumber(buildNumber);
 		const result: Artifact[] = [];
 
 		for (const buildInfo of buildInfos) {
@@ -50,14 +48,20 @@ export class ArtifactoryHelper {
 		return result;
 	}
 
-	private async buildInfosByNumber(project: string, buildNumber: string): Promise<BuildInfo[]> {
+	public artifactUrl(artifact: Artifact): string {
+		const baseUrl = `${ this.config.artifactsProvider.protocol }://${ this.config.artifactsProvider.host }/artifactory`;
+		
+		return `${ baseUrl }/${ artifact.path }`;
+	}
+
+	private async buildInfosByNumber(buildNumber: string): Promise<BuildInfo[]> {
 		if (!this.artifactoryClient) {
 			throw new Error('Artifactory client does not exists');
 		}
 
 		const result: BuildInfo[] = [];
 
-		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${ project }`);;
+		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${ this.config.artifactsProvider.project }`);;
 
 		if (!this.buildsList) {
 			const allBuilds = await get(buildsEndpoint);
