@@ -18,7 +18,7 @@ async function main(): Promise<number> {
 	const configProvider = await createConfigProvider(args.config);
 
 	if (command === 'plan') {
-		plan(configProvider.config);
+		await plan(configProvider.config);
 	}
 
 	if (command === 'apply') {

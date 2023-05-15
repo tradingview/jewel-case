@@ -2,6 +2,7 @@ node_modules/
 
 # build output directories
 dist/
+out/
 
 # coverage report directory
 /coverage/

@@ -1,5 +1,6 @@
 import { Readable } from 'stream';
-import { IncomingMessage, request as httpRequest } from 'http';
+import { request as httpRequest } from 'https';
+import type { IncomingMessage } from 'http';
 
 export interface RequestBody {
 	content: string | Buffer;
@@ -19,6 +20,12 @@ export async function requestStream(url: string, method: string, requestData?: R
 		
 			req
 				.on('response', (incomingMessage: IncomingMessage) => {
+					if (incomingMessage.statusCode === 301) {
+						if (incomingMessage.headers.location) {
+							return requestStream(incomingMessage.headers.location, method, requestData);
+						}
+					}
+
 					if (incomingMessage.statusCode !== 200) {
 						const stCode = incomingMessage.statusCode ?? 'NO_CODE';
 						const stMessage = incomingMessage.statusMessage ?? 'NO_MESSAGE';
@@ -28,6 +35,7 @@ export async function requestStream(url: string, method: string, requestData?: R
 					}
 
 					resolve(incomingMessage);
+					return;
 				})
 				.on('error', (err: Error) => {
 					const errno = (err as {errno?: string}).errno ?? '';

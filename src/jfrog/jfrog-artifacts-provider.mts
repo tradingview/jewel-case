@@ -1,4 +1,4 @@
-import { type ArtifactoryClient, createArtifactoryClient } from 's3-groundskeeper';
+import { type ArtifactoryClient, createArtifactoryClient, type ArtifactoryItemMeta } from 's3-groundskeeper';
 
 import { get } from '../http.mjs';
 import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
@@ -48,10 +48,24 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 		return result;
 	}
 
-	public artifactUrl(artifact: Artifact): string {
-		const baseUrl = `${ this.config.artifactsProvider.protocol }://${ this.config.artifactsProvider.host }/artifactory`;
+	public async artifactUrl(artifact: Artifact): Promise<string> {
+		const aqlItemField = 'actual_md5';
+            
+		const artQueryResult = await this.artifactoryClient.query<ArtifactoryItemMeta>(`items.find({"${aqlItemField}": "${artifact.md5}"}).include("*")`);
+		if (artQueryResult.results.length === 0) {
+			throw new Error(`No artifactory item found for ("${aqlItemField}": "${artifact.md5}"}`);
+		}
+		else if (artQueryResult.results.length > 1) {
+			throw new Error(`Expected single artifactory item for ("${aqlItemField}": "${artifact.md5}"}`);
+		}
+	
+		const item = artQueryResult.results[0];
 		
-		return `${ baseUrl }/${ artifact.path }`;
+		if (!item) {
+			throw new Error(`No artifactory item found for ("${aqlItemField}": "${artifact.md5}"}`);
+		}
+		
+		return this.artifactoryClient.resolveUri(item);
 	}
 
 	private async buildInfosByNumber(buildNumber: string): Promise<BuildInfo[]> {

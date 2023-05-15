@@ -1,6 +1,8 @@
 export interface DebBuilderConfig {
 	debBuilder: {
+		gpgPublicKeyPath: string;
 		gpgKeyName: string;
-		repoName: string;
+		applicationName: string;
+		component: string;
 	}
 }
