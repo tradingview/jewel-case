@@ -4,5 +4,6 @@ export interface DebBuilderConfig {
 		gpgKeyName: string;
 		applicationName: string;
 		component: string;
+		origin: string;
 	}
 }

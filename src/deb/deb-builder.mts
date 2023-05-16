@@ -156,6 +156,8 @@ export class DebBuilder implements IBuilder {
 
 				await compressFile(targetPackagesFile);
 			}
+
+			await this.makeRelease(chan.channel, 'amd64');
 		}
 	}
 
@@ -167,30 +169,30 @@ export class DebBuilder implements IBuilder {
 		return `${ this.config.debBuilder.applicationName }-${ version }_${ arch }.deb`;
 	}
 
-	private async makeRelease(): Promise<void> {
+	private async makeRelease(channel: string, arch: string): Promise<void> {
         console.log('DebBuilder: makeRelease');
 
-        const publicKeyPath = path.join(this.keys, 'desktop.asc');
-        await fs.promises.copyFile(this.config.debBuilder.gpgPublicKeyPath, publicKeyPath);
+		const publicKeyPath = path.join(this.keys, 'desktop.asc');
+		createDir(this.keys);
+		await fs.promises.copyFile(this.config.debBuilder.gpgPublicKeyPath, publicKeyPath);
 
-        for (const chanDebs of this.debRepo) {
-            const releaseContent = ReleaseFileTemplate
-                .replace('$CHANNEL', chanDebs.channel)
-                .replace('$ARCH', this.arch)
-                .replace('$COMPONENT', this.config.debBuilder.component);
+		const releaseContent = ReleaseFileTemplate
+			.replace('$ORIGIN', this.config.debBuilder.origin)
+			.replace('$CHANNEL', channel)
+			.replace('$ARCH', arch)
+			.replace('$COMPONENT', this.config.debBuilder.component);
 
-            const releasePath = path.join(this.dists, chanDebs.channel, 'main', `binary-${ this.arch }`, 'Release');
-            const releaseFilePath = path.join(this.dists, chanDebs.channel, 'Release');
-            const releaseGpgFilePath = path.join(this.dists, chanDebs.channel, 'Release.gpg');
-            const inReleaseFilePath = path.join(this.dists, chanDebs.channel, 'InRelease');
+		const releasePath = path.join(this.dists, channel, 'main', `binary-${ arch }`, 'Release');
+		const releaseFilePath = path.join(this.dists, channel, 'Release');
+		const releaseGpgFilePath = path.join(this.dists, channel, 'Release.gpg');
+		const inReleaseFilePath = path.join(this.dists, channel, 'InRelease');
 
-            await fs.promises.writeFile(releasePath, releaseContent);
-            await fs.promises.copyFile(releasePath, releaseFilePath);
+		await fs.promises.writeFile(releasePath, releaseContent);
+		await fs.promises.copyFile(releasePath, releaseFilePath);
 
-            await this.execToolToFile('apt-ftparchive', ['release', `${ this.dists }/${ chanDebs.channel }`], releaseFilePath, true);   
-            await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
-            await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
-        }
+		await this.execToolToFile('apt-ftparchive', ['release', `${ this.dists }/${ channel }`], releaseFilePath, true);   
+		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
+		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
     }
 
 	private async execToolToFile(tool: string, args: string[], outputPath?: string, append?: boolean): Promise<void> {
