@@ -1,8 +1,8 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 
-import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
 import type { ArtifactsProviderConfig } from './artifacts-provider-config.mjs';
+import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
 import type { Repo } from './repo.mjs';
 
 interface BaseConfig {

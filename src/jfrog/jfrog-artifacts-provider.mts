@@ -1,6 +1,8 @@
-import { type ArtifactoryClient, createArtifactoryClient, type ArtifactoryItemMeta } from 's3-groundskeeper';
+import { type ArtifactoryClient, type ArtifactoryItemMeta, createArtifactoryClient } from 's3-groundskeeper';
 
+import { createFile } from '../fs.mjs';
 import { get } from '../http.mjs';
+
 import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
 import type { ArtifactsProviderConfig } from '../artifacts-provider-config.mjs';
 
@@ -19,6 +21,10 @@ export interface BuildInfo {
 	}
 }
 
+function metapointerContent(fileMd5Hash: string): string {
+	return `#metapointer jfrogart\noid md5:${fileMd5Hash}`;
+}
+
 export class JfrogArtifactsProvider implements ArtifactsProvider {
 	private artifactoryClient: ArtifactoryClient;
 	private buildsList?: BuildsList;
@@ -26,12 +32,12 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 	private readonly config: ArtifactsProviderConfig;
 
 	constructor(config: ArtifactsProviderConfig) {
-		this.config = config;		
+		this.config = config;
 		this.artifactoryClient = createArtifactoryClient({
 			protocol: this.config.artifactsProvider.protocol,
 			host: this.config.artifactsProvider.host,
-			apiKey: this.config.artifactsProvider.apiKey, 
-			user: this.config.artifactsProvider.user
+			apiKey: this.config.artifactsProvider.apiKey,
+			user: this.config.artifactsProvider.user,
 		});
 	}
 
@@ -50,22 +56,26 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 
 	public async artifactUrl(artifact: Artifact): Promise<string> {
 		const aqlItemField = 'actual_md5';
-            
+
 		const artQueryResult = await this.artifactoryClient.query<ArtifactoryItemMeta>(`items.find({"${aqlItemField}": "${artifact.md5}"}).include("*")`);
 		if (artQueryResult.results.length === 0) {
 			throw new Error(`No artifactory item found for ("${aqlItemField}": "${artifact.md5}"}`);
-		}
-		else if (artQueryResult.results.length > 1) {
+		} else if (artQueryResult.results.length > 1) {
 			throw new Error(`Expected single artifactory item for ("${aqlItemField}": "${artifact.md5}"}`);
 		}
-	
+
 		const item = artQueryResult.results[0];
-		
+
 		if (!item) {
 			throw new Error(`No artifactory item found for ("${aqlItemField}": "${artifact.md5}"}`);
 		}
-		
+
 		return this.artifactoryClient.resolveUri(item);
+	}
+
+	// eslint-disable-next-line class-methods-use-this
+	public createMetapointerFile(artifact: Artifact, fileName: string): void {
+		createFile(fileName, metapointerContent(artifact.md5));
 	}
 
 	private async buildInfosByNumber(buildNumber: string): Promise<BuildInfo[]> {
@@ -75,7 +85,7 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 
 		const result: BuildInfo[] = [];
 
-		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${ this.config.artifactsProvider.project }`);;
+		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${this.config.artifactsProvider.project}`);
 
 		if (!this.buildsList) {
 			const allBuilds = await get(buildsEndpoint);
@@ -84,18 +94,18 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 
 		const buildTimes = (buildUri: string): Date[] => {
 			const times: Date[] = [];
-	
+
 			this.buildsList?.buildsNumbers.forEach(build => {
-				if (build.uri === `/${ buildUri}`) {
+				if (build.uri === `/${buildUri}`) {
 					times.push(new Date(build.started));
 				}
 			});
-		
+
 			return times;
 		};
 
 		for (const value of buildTimes(buildNumber)) {
-			const buildInfoEndpoint = `${ buildsEndpoint }/${ buildNumber }?started=${ value.toISOString() }`;
+			const buildInfoEndpoint = `${buildsEndpoint}/${buildNumber}?started=${value.toISOString()}`;
 			const info = (await get(buildInfoEndpoint)).toString();
 			const buildInfo = JSON.parse(info) as BuildInfo;
 

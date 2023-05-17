@@ -6,3 +6,5 @@ out/
 
 # coverage report directory
 /coverage/
+
+jewel-case.config.mjs

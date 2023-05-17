@@ -10,4 +10,5 @@ export interface Artifact {
 export interface ArtifactsProvider {
 	artifactsByBuildNumber(buildNumber: string): Promise<Artifact[]>;
 	artifactUrl(artifact: Artifact): Promise<string>;
+	createMetapointerFile(artifact: Artifact, fileName: string): void;
 }
