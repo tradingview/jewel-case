@@ -22,7 +22,7 @@ async function main(): Promise<number> {
 	}
 
 	if (command === 'apply') {
-		apply(configProvider.config);
+		apply();
 	}
 
 	return 0;

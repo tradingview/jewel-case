@@ -13,6 +13,7 @@ import { createDir, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
 import type { IBuilder } from '../ibuilder.mjs';
 import { requestRange } from '../http.mjs';
+import type { Packages } from '../repo.mjs';
 
 const ReleaseFileTemplate =
 `Origin: $ORIGIN
@@ -21,6 +22,11 @@ Architecture: $ARCH
 Component: $COMPONENT
 Codename: $CHANNEL\n`;
 
+interface DebDescriptor {
+	version: string,
+	url: string,
+	artifact: Artifact
+}
 
 export class DebBuilder implements IBuilder {
 	private readonly config: Config;
@@ -32,11 +38,8 @@ export class DebBuilder implements IBuilder {
 
 	private debRepo: {
 		channel: string,
-		debs: {
-			version: string,
-			url: string,
-			artifact: Artifact
-		}[]}[] = [];
+		debs: DebDescriptor[]
+	}[] = [];
 
 	constructor(artifactsProvider: ArtifactsProvider, config: Config) {
 		this.config = config;
@@ -48,83 +51,8 @@ export class DebBuilder implements IBuilder {
 	}
 
 	public async plan(): Promise<void> {
-		for (const entry of this.config.base.repo) {
-			const debs: {
-				version: string,
-				url: string,
-				artifact: Artifact
-			}[] = [];
-
-			for (const pack of entry.packages.packages) {
-				const debArtifactItems = (await this.artifactsProvider.artifactsByBuildNumber(pack.buildNumber)).filter(artifact => artifact.type === 'deb');
-
-				for (const artifact of debArtifactItems) {
-					debs.push({
-						version: pack.version,
-						url: await this.artifactsProvider.artifactUrl(artifact),
-						artifact,
-					});
-				}
-			}
-
-			this.debRepo.push({ channel: entry.channel, debs });
-		}
-
-
-		for (const channel of this.debRepo) {
-			for (const deb of channel.debs) {
-				const debUrl = deb.url;
-				const controlTarSizeRange = '120-129';
-
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-				const cocntrolTarSize = Number((await requestRange(debUrl, controlTarSizeRange)).read().toString()
-					.trim());
-				const controlTarRange = `132-${131 + cocntrolTarSize}`;
-				const controlTar = await requestRange(debUrl, controlTarRange);
-
-				const whereExtract = path.join(os.tmpdir(), `control-${crypto.randomBytes(4).toString('hex')}`);
-
-				createDir(whereExtract);
-
-				await new Promise<void>(resolve => {
-					controlTar
-						.pipe(tar.extract({ cwd: whereExtract, strip: 1 }, ['./control']))
-						.on('finish', () => {
-							const controlMetaContent = fs.readFileSync(path.join(whereExtract, 'control'), 'utf-8').replaceAll(':', '=');
-							const controlMeta = ini.parse(controlMetaContent);
-
-							const targetMetaPath = path.join(this.dists, channel.channel, this.config.debBuilder.component, `binary-${controlMeta['Architecture']}`, `${this.debName(deb.version, controlMeta['Architecture'])}.meta`);
-							createDir(path.dirname(targetMetaPath));
-							fs.renameSync(path.join(whereExtract, 'control'), targetMetaPath);
-
-							removeDir(whereExtract);
-
-							const debPath = path.join(this.pool, this.config.debBuilder.component, `${this.config.debBuilder.applicationName[0]}`, this.config.debBuilder.applicationName, channel.channel, this.debName(deb.version, controlMeta['Architecture']));
-							const repoRoot = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
-							const relativeDebPath = path.relative(repoRoot, debPath);
-							this.artifactsProvider.createMetapointerFile(deb.artifact, debPath);
-							const debSize = controlTar.headers['content-range']?.split('/')[1];
-							const sha1 = controlTar.headers['x-checksum-sha1'];
-							const sha256 = controlTar.headers['x-checksum-sha256'];
-							const md5 = controlTar.headers['x-checksum-md5'];
-
-							if (typeof sha1 !== 'string' || typeof sha256 !== 'string' || typeof md5 !== 'string' || typeof debSize !== 'string') {
-								throw new Error('No checksum was found in headers');
-							}
-
-							const dataToAppend = `Filename: ${relativeDebPath}\nSize: ${debSize}\nSHA1: ${sha1}\nSHA256: ${sha256}\nMD5Sum: ${md5}\n`;
-
-							fs.appendFile(targetMetaPath, dataToAppend, err => {
-								if (err) {
-									throw err;
-								}
-
-								resolve();
-							});
-						});
-				});
-			}
-		}
+		await this.prepareMetaRepository();
+		await this.dpkgScanpackages();
 
 		const compressFile = (input: string): Promise<void> => new Promise<void>(resolve => {
 			const inp = fs.createReadStream(input);
@@ -197,6 +125,122 @@ export class DebBuilder implements IBuilder {
 		await this.execToolToFile('apt-ftparchive', ['release', `${this.dists}/${channel}`], releaseFilePath, true);
 		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
 		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
+	}
+
+	private async prepareMetaRepository(): Promise<void> {
+		const debsPromises: Promise<{channel: string, debs: DebDescriptor[]}>[] = [];
+
+		this.config.base.repo.forEach(channelEntry => {
+			const a = (async (): Promise<{ channel: string, debs: DebDescriptor[] }> => {
+				return {
+					channel: channelEntry.channel,
+					debs: await this.debsByPackages(channelEntry.packages)
+				};
+			})();
+
+			debsPromises.push(a);
+		});
+
+		const b = await Promise.all(debsPromises);
+
+		b.forEach(entry => {
+			this.debRepo.push(entry);
+		});
+	}
+
+	private async debsByPackages(packs: Packages): Promise<DebDescriptor[]> {
+		const debsPromises: Promise<DebDescriptor>[] = [];
+		const artsByBuildNumbersPromises: Promise<{version: string, artifacts: Artifact[]}>[] = [];
+
+		packs.packages.forEach(pack => {
+			artsByBuildNumbersPromises.push((async (): Promise<{ version: string, artifacts: Artifact[] }> => {
+				return {
+					version: pack.version,
+					artifacts: await this.artifactsProvider.artifactsByBuildNumber(pack.buildNumber),
+				};
+			})());
+		});
+
+		const artsByBuildNumbers = await Promise.all(artsByBuildNumbersPromises);
+
+		artsByBuildNumbers.forEach(value => {
+			value.artifacts.filter(artifact => artifact.type === 'deb').forEach(artifact => {
+				debsPromises.push((async (): Promise<DebDescriptor> => {
+					return {
+						version: value.version,
+						artifact: artifact,
+						url: await this.artifactsProvider.artifactUrl(artifact)
+					};
+				})());
+			})
+		});
+
+		return Promise.all(debsPromises);
+	}
+
+	private async dpkgScanpackages(): Promise<void> {
+		const promises: Promise<void>[] = [];
+
+		this.debRepo.forEach(channel => {
+			channel.debs.forEach(deb => {
+				promises.push(this.handleDeb(channel.channel, deb));
+			});
+		});
+
+		await Promise.all(promises);
+	}
+
+	private async handleDeb(channel: string, deb: DebDescriptor): Promise<void> {
+		const debUrl = deb.url;
+		const controlTarSizeRange = '120-129';
+
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+		const cocntrolTarSize = Number((await requestRange(debUrl, controlTarSizeRange)).read().toString()
+			.trim());
+		const controlTarRange = `132-${131 + cocntrolTarSize}`;
+		const controlTar = await requestRange(debUrl, controlTarRange);
+
+		const whereExtract = path.join(os.tmpdir(), `control-${crypto.randomBytes(4).toString('hex')}`);
+
+		createDir(whereExtract);
+
+		await new Promise<void>(resolve => {
+			controlTar
+				.pipe(tar.extract({ cwd: whereExtract, strip: 1 }, ['./control']))
+				.on('finish', () => {
+					const controlMetaContent = fs.readFileSync(path.join(whereExtract, 'control'), 'utf-8').replaceAll(':', '=');
+					const controlMeta = ini.parse(controlMetaContent);
+
+					const targetMetaPath = path.join(this.dists, channel, this.config.debBuilder.component, `binary-${controlMeta['Architecture']}`, `${this.debName(deb.version, controlMeta['Architecture'])}.meta`);
+					createDir(path.dirname(targetMetaPath));
+					fs.renameSync(path.join(whereExtract, 'control'), targetMetaPath);
+
+					removeDir(whereExtract);
+
+					const debPath = path.join(this.pool, this.config.debBuilder.component, `${this.config.debBuilder.applicationName[0]}`, this.config.debBuilder.applicationName, channel, this.debName(deb.version, controlMeta['Architecture']));
+					const repoRoot = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
+					const relativeDebPath = path.relative(repoRoot, debPath);
+					this.artifactsProvider.createMetapointerFile(deb.artifact, debPath);
+					const debSize = controlTar.headers['content-range']?.split('/')[1];
+					const sha1 = controlTar.headers['x-checksum-sha1'];
+					const sha256 = controlTar.headers['x-checksum-sha256'];
+					const md5 = controlTar.headers['x-checksum-md5'];
+
+					if (typeof sha1 !== 'string' || typeof sha256 !== 'string' || typeof md5 !== 'string' || typeof debSize !== 'string') {
+						throw new Error('No checksum was found in headers');
+					}
+
+					const dataToAppend = `Filename: ${relativeDebPath}\nSize: ${debSize}\nSHA1: ${sha1}\nSHA256: ${sha256}\nMD5Sum: ${md5}\n`;
+
+					fs.appendFile(targetMetaPath, dataToAppend, err => {
+						if (err) {
+							throw err;
+						}
+
+						resolve();
+					});
+				});
+		});
 	}
 
 	private async execToolToFile(tool: string, args: string[], outputPath?: string, append?: boolean): Promise<void> {

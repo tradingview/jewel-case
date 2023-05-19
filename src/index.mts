@@ -5,7 +5,7 @@ import { JfrogArtifactsProvider } from './jfrog/jfrog-artifacts-provider.mjs';
 
 export { type Config, createConfigProvider } from './config.mjs';
 
-export async function plan(config: Config): Promise<void> {
+export function plan(config: Config): Promise<void[]> {
 	const artifactsProvider = new JfrogArtifactsProvider(config);
 
 	const builders: IBuilder[] = [];
@@ -14,11 +14,13 @@ export async function plan(config: Config): Promise<void> {
 		builders.push(new DebBuilder(artifactsProvider, config));
 	}
 
+	const planPromises: Promise<void>[] = [];
+
 	for (const builder of builders) {
-		await builder.plan();
+		planPromises.push(builder.plan());
 	}
 
-	console.log('plan()');
+	return Promise.all(planPromises);
 }
 
 export function apply(): void {

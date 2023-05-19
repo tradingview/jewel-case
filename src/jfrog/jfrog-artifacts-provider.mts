@@ -104,13 +104,19 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 			return times;
 		};
 
+		const infoPromises: Promise<Buffer>[] = [];
+
 		for (const value of buildTimes(buildNumber)) {
 			const buildInfoEndpoint = `${buildsEndpoint}/${buildNumber}?started=${value.toISOString()}`;
-			const info = (await get(buildInfoEndpoint)).toString();
-			const buildInfo = JSON.parse(info) as BuildInfo;
-
-			result.push(buildInfo);
+			infoPromises.push(get(buildInfoEndpoint));
 		}
+
+		const infos = await Promise.all(infoPromises);
+
+		infos.forEach(info => {
+			const buildInfo = JSON.parse(info.toString()) as BuildInfo;
+			result.push(buildInfo);
+		});
 
 		return result;
 	}
