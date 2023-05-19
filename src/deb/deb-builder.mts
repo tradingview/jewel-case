@@ -1,5 +1,4 @@
 import { createGzip } from 'zlib';
-import { spawnSync } from 'child_process';
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -9,11 +8,11 @@ import * as path from 'path';
 import * as tar from 'tar';
 
 import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
-import { createDir, removeDir } from '../fs.mjs';
+import { createDir, execToolToFile, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
 import type { IBuilder } from '../ibuilder.mjs';
-import { requestRange } from '../http.mjs';
 import type { Packages } from '../repo.mjs';
+import { requestRange } from '../http.mjs';
 
 const ReleaseFileTemplate =
 `Origin: $ORIGIN
@@ -41,6 +40,8 @@ export class DebBuilder implements IBuilder {
 		debs: DebDescriptor[]
 	}[] = [];
 
+	private archesByChannel: Map<string, Set<string>> = new Map();
+
 	constructor(artifactsProvider: ArtifactsProvider, config: Config) {
 		this.config = config;
 
@@ -53,44 +54,7 @@ export class DebBuilder implements IBuilder {
 	public async plan(): Promise<void> {
 		await this.prepareMetaRepository();
 		await this.dpkgScanpackages();
-
-		const compressFile = (input: string): Promise<void> => new Promise<void>(resolve => {
-			const inp = fs.createReadStream(input);
-			const out = fs.createWriteStream(`${input}.gz`);
-
-			const gzip = createGzip({ level: 9 });
-
-			inp.pipe(gzip).pipe(out)
-				.on('finish', () => {
-					resolve();
-				});
-		});
-
-		for (const chan of this.debRepo) {
-			const distsRoot = path.join(this.dists, chan.channel, this.config.debBuilder.component);
-			const distsByArch = fs.readdirSync(distsRoot).map(dist => path.join(distsRoot, dist));
-
-			for (const dist of distsByArch) {
-				const targetPackagesFile = path.join(dist, 'Packages');
-				const metaFiles = fs.readdirSync(dist)
-					.filter(fileName => fileName.endsWith('.meta'))
-					.map(metaFile => path.join(dist, metaFile));
-
-				let packagesContent = '';
-
-				for (const metaFile of metaFiles) {
-					packagesContent += fs.readFileSync(metaFile);
-					packagesContent += '\n';
-					fs.unlinkSync(metaFile);
-				}
-
-				fs.writeFileSync(targetPackagesFile, packagesContent);
-
-				await compressFile(targetPackagesFile);
-			}
-
-			await this.makeRelease(chan.channel, 'amd64');
-		}
+		await this.makeRelease();
 	}
 
 	public apply(): void {
@@ -101,9 +65,7 @@ export class DebBuilder implements IBuilder {
 		return `${this.config.debBuilder.applicationName}-${version}_${arch}.deb`;
 	}
 
-	private async makeRelease(channel: string, arch: string): Promise<void> {
-		console.log('DebBuilder: makeRelease');
-
+	private async makeReleaseFileAndSign(channel: string, arch: string): Promise<void> {
 		const publicKeyPath = path.join(this.keys, 'desktop.asc');
 		createDir(this.keys);
 		await fs.promises.copyFile(this.config.debBuilder.gpgPublicKeyPath, publicKeyPath);
@@ -114,36 +76,31 @@ export class DebBuilder implements IBuilder {
 			.replace('$ARCH', arch)
 			.replace('$COMPONENT', this.config.debBuilder.component);
 
-		const releasePath = path.join(this.dists, channel, 'main', `binary-${arch}`, 'Release');
 		const releaseFilePath = path.join(this.dists, channel, 'Release');
 		const releaseGpgFilePath = path.join(this.dists, channel, 'Release.gpg');
 		const inReleaseFilePath = path.join(this.dists, channel, 'InRelease');
 
-		await fs.promises.writeFile(releasePath, releaseContent);
-		await fs.promises.copyFile(releasePath, releaseFilePath);
+		await fs.promises.writeFile(releaseFilePath, releaseContent);
+		await fs.promises.copyFile(releaseFilePath, inReleaseFilePath);
 
-		await this.execToolToFile('apt-ftparchive', ['release', `${this.dists}/${channel}`], releaseFilePath, true);
-		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
-		await this.execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
+		await execToolToFile('apt-ftparchive', ['release', `${this.dists}/${channel}`], releaseFilePath, true);
+		await execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
+		await execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
 	}
 
 	private async prepareMetaRepository(): Promise<void> {
 		const debsPromises: Promise<{channel: string, debs: DebDescriptor[]}>[] = [];
 
 		this.config.base.repo.forEach(channelEntry => {
-			const a = (async (): Promise<{ channel: string, debs: DebDescriptor[] }> => {
-				return {
-					channel: channelEntry.channel,
-					debs: await this.debsByPackages(channelEntry.packages)
-				};
-			})();
-
-			debsPromises.push(a);
+			debsPromises.push((async(): Promise<{ channel: string, debs: DebDescriptor[] }> => ({
+				channel: channelEntry.channel,
+				debs: await this.debsByPackages(channelEntry.packages),
+			}))());
 		});
 
-		const b = await Promise.all(debsPromises);
+		const debs = await Promise.all(debsPromises);
 
-		b.forEach(entry => {
+		debs.forEach(entry => {
 			this.debRepo.push(entry);
 		});
 	}
@@ -153,26 +110,22 @@ export class DebBuilder implements IBuilder {
 		const artsByBuildNumbersPromises: Promise<{version: string, artifacts: Artifact[]}>[] = [];
 
 		packs.packages.forEach(pack => {
-			artsByBuildNumbersPromises.push((async (): Promise<{ version: string, artifacts: Artifact[] }> => {
-				return {
-					version: pack.version,
-					artifacts: await this.artifactsProvider.artifactsByBuildNumber(pack.buildNumber),
-				};
-			})());
+			artsByBuildNumbersPromises.push((async(): Promise<{ version: string, artifacts: Artifact[] }> => ({
+				version: pack.version,
+				artifacts: await this.artifactsProvider.artifactsByBuildNumber(pack.buildNumber),
+			}))());
 		});
 
 		const artsByBuildNumbers = await Promise.all(artsByBuildNumbersPromises);
 
 		artsByBuildNumbers.forEach(value => {
 			value.artifacts.filter(artifact => artifact.type === 'deb').forEach(artifact => {
-				debsPromises.push((async (): Promise<DebDescriptor> => {
-					return {
-						version: value.version,
-						artifact: artifact,
-						url: await this.artifactsProvider.artifactUrl(artifact)
-					};
-				})());
-			})
+				debsPromises.push((async(): Promise<DebDescriptor> => ({
+					version: value.version,
+					artifact,
+					url: await this.artifactsProvider.artifactUrl(artifact),
+				}))());
+			});
 		});
 
 		return Promise.all(debsPromises);
@@ -207,17 +160,36 @@ export class DebBuilder implements IBuilder {
 		await new Promise<void>(resolve => {
 			controlTar
 				.pipe(tar.extract({ cwd: whereExtract, strip: 1 }, ['./control']))
+				// eslint-disable-next-line max-statements
 				.on('finish', () => {
 					const controlMetaContent = fs.readFileSync(path.join(whereExtract, 'control'), 'utf-8').replaceAll(':', '=');
 					const controlMeta = ini.parse(controlMetaContent);
+					const arch = controlMeta['Architecture'];
 
-					const targetMetaPath = path.join(this.dists, channel, this.config.debBuilder.component, `binary-${controlMeta['Architecture']}`, `${this.debName(deb.version, controlMeta['Architecture'])}.meta`);
+					const archesSet = this.archesByChannel.get(channel);
+
+					if (archesSet) {
+						archesSet.add(arch);
+					} else {
+						this.archesByChannel.set(channel, new Set<string>([arch]));
+					}
+
+					const targetMetaPath = path.join(this.dists,
+						channel,
+						this.config.debBuilder.component,
+						`binary-${arch}`,
+						`${this.debName(deb.version, arch)}.meta`);
 					createDir(path.dirname(targetMetaPath));
 					fs.renameSync(path.join(whereExtract, 'control'), targetMetaPath);
 
 					removeDir(whereExtract);
 
-					const debPath = path.join(this.pool, this.config.debBuilder.component, `${this.config.debBuilder.applicationName[0]}`, this.config.debBuilder.applicationName, channel, this.debName(deb.version, controlMeta['Architecture']));
+					const debPath = path.join(this.pool,
+						this.config.debBuilder.component,
+						`${this.config.debBuilder.applicationName[0]}`,
+						this.config.debBuilder.applicationName,
+						channel,
+						this.debName(deb.version, arch));
 					const repoRoot = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
 					const relativeDebPath = path.relative(repoRoot, debPath);
 					this.artifactsProvider.createMetapointerFile(deb.artifact, debPath);
@@ -243,36 +215,58 @@ export class DebBuilder implements IBuilder {
 		});
 	}
 
-	private async execToolToFile(tool: string, args: string[], outputPath?: string, append?: boolean): Promise<void> {
-		if (!append && outputPath && fs.existsSync(outputPath)) {
-			await fs.promises.unlink(outputPath);
-		}
+	private async makeRelease(): Promise<{}> {
+		const compressFile = (filePath: string): Promise<void> => new Promise<void>(resolve => {
+			const inp = fs.createReadStream(filePath);
+			const out = fs.createWriteStream(`${filePath}.gz`);
 
-		const toolProcessResult = spawnSync(tool, args, { stdio: 'pipe', encoding: 'utf-8' });
-		const toolOutput = toolProcessResult.stdout;
+			const gzip = createGzip({ level: 9 });
 
-		const dumpToolOutput = (): void => {
-			const toolErrOutput = toolProcessResult.stderr;
-			if (toolOutput && toolOutput.length > 0) {
-				console.log(toolOutput);
+			inp.pipe(gzip).pipe(out)
+				.on('finish', () => {
+					resolve();
+				});
+		});
+
+		const compressPromises: Promise<void>[] = [];
+
+		this.debRepo.forEach(channelEntry => {
+			const distsRoot = path.join(this.dists, channelEntry.channel, this.config.debBuilder.component);
+			const distsByArch = fs.readdirSync(distsRoot).map(dist => path.join(distsRoot, dist));
+
+			distsByArch.forEach(dist => {
+				const targetPackagesFile = path.join(dist, 'Packages');
+				const metaFiles = fs.readdirSync(dist)
+					.filter(fileName => fileName.endsWith('.meta'))
+					.map(metaFile => path.join(dist, metaFile));
+
+				let packagesContent = '';
+
+				for (const metaFile of metaFiles) {
+					packagesContent += fs.readFileSync(metaFile);
+					packagesContent += '\n';
+					fs.unlinkSync(metaFile);
+				}
+
+				fs.writeFileSync(targetPackagesFile, packagesContent);
+
+				compressPromises.push(compressFile(targetPackagesFile));
+			});
+		});
+
+		await Promise.all(compressPromises);
+
+		const releasesPromises: Promise<void>[] = [];
+
+		this.debRepo.forEach(chan => {
+			const archesSet = this.archesByChannel.get(chan.channel);
+			if (!archesSet) {
+				throw new Error('No arch was found for channel');
 			}
 
-			if (toolErrOutput && toolErrOutput.length > 0) {
-				console.warn(toolErrOutput);
-			}
-		};
+			releasesPromises.push(this.makeReleaseFileAndSign(chan.channel, [...archesSet.values()].join(' ')));
+		});
 
-		if (outputPath) {
-			console.log(`Execute ${tool} ${args.join(' ')} => ${outputPath}`);
-			dumpToolOutput();
-			if (append) {
-				return fs.promises.appendFile(outputPath, toolOutput);
-			}
-
-			return fs.promises.writeFile(outputPath, toolOutput);
-		}
-
-		console.log(`Execute ${tool} ${args.join(' ')}`);
-		dumpToolOutput();
+		return Promise.all(releasesPromises);
 	}
 }

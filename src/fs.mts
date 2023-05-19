@@ -1,5 +1,6 @@
 import * as path from 'path';
-import { existsSync, mkdirSync, rmdirSync, writeFileSync } from 'fs';
+import { existsSync, promises as fsPromises, mkdirSync, rmdirSync, writeFileSync } from 'fs';
+import { spawnSync } from 'child_process';
 
 export function createFile(filePath: string, content: string): void {
 	const dirPath = path.dirname(filePath);
@@ -23,4 +24,40 @@ export function removeDir(dirName: string): void {
 
 export function createMetapointerContent(fileMd5Hash: string): string {
 	return `#metapointer jfrogart\noid md5:${fileMd5Hash}`;
+}
+
+// eslint-disable-next-line max-params
+export async function execToolToFile(tool: string, args: string[], outputPath?: string, append?: boolean): Promise<void> {
+	if (!append && outputPath && existsSync(outputPath)) {
+		await fsPromises.unlink(outputPath);
+	}
+
+	const toolProcessResult = spawnSync(tool, args, { stdio: 'pipe', encoding: 'utf-8' });
+	const toolOutput = toolProcessResult.stdout;
+
+	const dumpToolOutput = (): void => {
+		const toolErrOutput = toolProcessResult.stderr;
+		if (toolOutput && toolOutput.length > 0) {
+			console.log(toolOutput);
+		}
+
+		if (toolErrOutput && toolErrOutput.length > 0) {
+			console.warn(toolErrOutput);
+		}
+	};
+
+	if (outputPath) {
+		console.log(`Execute ${tool} ${args.join(' ')} => ${outputPath}`);
+		dumpToolOutput();
+		if (append) {
+			return fsPromises.appendFile(outputPath, toolOutput);
+		}
+
+		return fsPromises.writeFile(outputPath, toolOutput);
+	}
+
+	console.log(`Execute ${tool} ${args.join(' ')}`);
+	dumpToolOutput();
+
+	return Promise.resolve();
 }

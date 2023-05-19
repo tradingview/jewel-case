@@ -116,8 +116,10 @@ export function requestRange(url: string, range: string): Promise<IncomingMessag
 }
 
 export function get(url: string, opt?: {stream: false}): Promise<Buffer>;
+// eslint-disable-next-line no-redeclare
 export function get(url: string, opt?: {stream: true}): Promise<Readable>;
 
+// eslint-disable-next-line no-redeclare
 export function get(url: string, opt: {stream: boolean} = { stream: false }): Promise<Buffer | Readable> {
 	return opt.stream ? requestStream(url, 'GET', undefined) : request(url, 'GET', undefined);
 }
