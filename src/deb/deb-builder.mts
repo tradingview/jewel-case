@@ -81,11 +81,10 @@ export class DebBuilder implements IBuilder {
 		const inReleaseFilePath = path.join(this.dists, channel, 'InRelease');
 
 		await fs.promises.writeFile(releaseFilePath, releaseContent);
-		await fs.promises.copyFile(releaseFilePath, inReleaseFilePath);
 
 		await execToolToFile('apt-ftparchive', ['release', `${this.dists}/${channel}`], releaseFilePath, true);
-		await execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
-		await execToolToFile('gpg', ['--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
+		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
+		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
 	}
 
 	private async prepareMetaRepository(): Promise<void> {
