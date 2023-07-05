@@ -1,4 +1,4 @@
-export interface IBuilder {
+export interface Deployer {
 	plan(): Promise<void>;
 	apply(): void;
 }

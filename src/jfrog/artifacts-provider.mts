@@ -5,15 +5,16 @@ import { get } from '../http.mjs';
 
 import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
 import type { ArtifactsProviderConfig } from '../artifacts-provider-config.mjs';
+import metapointerContent from '../s3-metapointer.mjs';
 
-export interface BuildsList {
+interface BuildsList {
 	buildsNumbers: {
 		uri: string,
 		started: string
 	}[]
 }
 
-export interface BuildInfo {
+interface BuildInfo {
 	buildInfo: {
 		modules: {
 			artifacts: Artifact[]
@@ -21,11 +22,7 @@ export interface BuildInfo {
 	}
 }
 
-function metapointerContent(fileMd5Hash: string): string {
-	return `#metapointer jfrogart\noid md5:${fileMd5Hash}`;
-}
-
-export class JfrogArtifactsProvider implements ArtifactsProvider {
+export default class JfrogArtifactsProvider implements ArtifactsProvider {
 	private artifactoryClient: ArtifactoryClient;
 	private buildsList?: BuildsList;
 
@@ -107,8 +104,9 @@ export class JfrogArtifactsProvider implements ArtifactsProvider {
 		const infoPromises: Promise<Buffer>[] = [];
 
 		for (const value of buildTimes(buildNumber)) {
-			const buildInfoEndpoint = `${buildsEndpoint}/${buildNumber}?started=${value.toISOString()}`;
-			infoPromises.push(get(buildInfoEndpoint));
+			const buildInfoEndpointUrl = new URL(buildNumber, buildsEndpoint);
+			buildInfoEndpointUrl.searchParams.set('started', value.toISOString());
+			infoPromises.push(get(buildInfoEndpointUrl.toString()));
 		}
 
 		const infos = await Promise.all(infoPromises);

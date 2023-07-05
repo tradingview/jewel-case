@@ -10,7 +10,7 @@ import * as tar from 'tar';
 import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
 import { createDir, execToolToFile, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
-import type { IBuilder } from '../ibuilder.mjs';
+import type { Deployer } from '../deployer.mjs';
 import type { Packages } from '../repo.mjs';
 import { requestRange } from '../http.mjs';
 
@@ -27,7 +27,12 @@ interface DebDescriptor {
 	artifact: Artifact
 }
 
-export class DebBuilder implements IBuilder {
+interface ChannelItem {
+	channel: string;
+	debs: DebDescriptor[]
+}
+
+export class DebBuilder implements Deployer {
 	private readonly config: Config;
 	private readonly artifactsProvider: ArtifactsProvider;
 
@@ -35,19 +40,16 @@ export class DebBuilder implements IBuilder {
 	private readonly dists: string;
 	private readonly keys: string;
 
-	private debRepo: {
-		channel: string,
-		debs: DebDescriptor[]
-	}[] = [];
+	private debRepo: ChannelItem[] = [];
 
 	private archesByChannel: Map<string, Set<string>> = new Map();
 
 	constructor(artifactsProvider: ArtifactsProvider, config: Config) {
 		this.config = config;
 
-		this.pool = `${this.config.base.out}/repo/${this.config.debBuilder.applicationName}/deb/pool`;
-		this.dists = `${this.config.base.out}/repo/${this.config.debBuilder.applicationName}/deb/dists`;
-		this.keys = `${this.config.base.out}/repo/${this.config.debBuilder.applicationName}/deb/keys`;
+		this.pool = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'pool');
+		this.dists = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'dists');
+		this.keys = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'keys');
 		this.artifactsProvider = artifactsProvider;
 	}
 
