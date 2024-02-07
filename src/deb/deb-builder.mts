@@ -36,6 +36,7 @@ export class DebBuilder implements Deployer {
 	private readonly config: Config;
 	private readonly artifactProvider: ArtifactProvider;
 
+	private readonly root: string;
 	private readonly pool: string;
 	private readonly dists: string;
 	private readonly keys: string;
@@ -47,9 +48,10 @@ export class DebBuilder implements Deployer {
 	constructor(artifactProvider: ArtifactProvider, config: Config) {
 		this.config = config;
 
-		this.pool = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'pool');
-		this.dists = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'dists');
-		this.keys = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'keys');
+		this.root = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
+		this.pool = path.join(this.root, 'pool');
+		this.dists = path.join(this.root, 'dists');
+		this.keys = path.join(this.root, 'keys');
 		this.artifactProvider = artifactProvider;
 	}
 
@@ -191,8 +193,7 @@ export class DebBuilder implements Deployer {
 						this.config.debBuilder.applicationName,
 						channel,
 						this.debName(deb.version, arch));
-					const repoRoot = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
-					const relativeDebPath = path.relative(repoRoot, debPath);
+					const relativeDebPath = path.relative(this.root, debPath);
 					this.artifactProvider.createMetapointerFile(deb.artifact, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
