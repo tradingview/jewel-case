@@ -7,7 +7,7 @@ export interface Artifact {
 	md5: string
 }
 
-export interface ArtifactsProvider {
+export interface ArtifactProvider {
 	artifactsByBuildNumber(buildNumber: string): Promise<Artifact[]>;
 	artifactUrl(artifact: Artifact): Promise<string>;
 	createMetapointerFile(artifact: Artifact, fileName: string): void;

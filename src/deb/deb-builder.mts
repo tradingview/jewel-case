@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as tar from 'tar';
 
-import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
+import type { Artifact, ArtifactProvider } from '../artifact-provider.mjs';
 import { createDir, execToolToFile, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
 import type { Deployer } from '../deployer.mjs';
@@ -34,7 +34,7 @@ interface ChannelItem {
 
 export class DebBuilder implements Deployer {
 	private readonly config: Config;
-	private readonly artifactsProvider: ArtifactsProvider;
+	private readonly artifactProvider: ArtifactProvider;
 
 	private readonly pool: string;
 	private readonly dists: string;
@@ -44,13 +44,13 @@ export class DebBuilder implements Deployer {
 
 	private archesByChannel: Map<string, Set<string>> = new Map();
 
-	constructor(artifactsProvider: ArtifactsProvider, config: Config) {
+	constructor(artifactProvider: ArtifactProvider, config: Config) {
 		this.config = config;
 
 		this.pool = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'pool');
 		this.dists = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'dists');
 		this.keys = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb', 'keys');
-		this.artifactsProvider = artifactsProvider;
+		this.artifactProvider = artifactProvider;
 	}
 
 	public async plan(): Promise<void> {
@@ -113,7 +113,7 @@ export class DebBuilder implements Deployer {
 		packs.packages.forEach(pack => {
 			artsByBuildNumbersPromises.push((async(): Promise<{ version: string, artifacts: Artifact[] }> => ({
 				version: pack.version,
-				artifacts: await this.artifactsProvider.artifactsByBuildNumber(pack.buildNumber),
+				artifacts: await this.artifactProvider.artifactsByBuildNumber(pack.buildNumber),
 			}))());
 		});
 
@@ -124,7 +124,7 @@ export class DebBuilder implements Deployer {
 				debsPromises.push((async(): Promise<DebDescriptor> => ({
 					version: value.version,
 					artifact,
-					url: await this.artifactsProvider.artifactUrl(artifact),
+					url: await this.artifactProvider.artifactUrl(artifact),
 				}))());
 			});
 		});
@@ -193,7 +193,7 @@ export class DebBuilder implements Deployer {
 						this.debName(deb.version, arch));
 					const repoRoot = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
 					const relativeDebPath = path.relative(repoRoot, debPath);
-					this.artifactsProvider.createMetapointerFile(deb.artifact, debPath);
+					this.artifactProvider.createMetapointerFile(deb.artifact, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
 					const sha256 = controlTar.headers['x-checksum-sha256'];

@@ -1,6 +1,6 @@
 export type ProviderType = 'jfrog';
 
-export interface ArtifactsProviderConfig {
+export interface ArtifactProviderConfig {
 	artifactsProvider: {
 		type: ProviderType,
 		protocol: string,

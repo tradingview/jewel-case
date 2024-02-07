@@ -1,7 +1,7 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 
-import type { ArtifactsProviderConfig } from './artifacts-provider-config.mjs';
+import type { ArtifactProviderConfig } from './artifact-provider-config.mjs';
 import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
 import type { Repo } from './repo.mjs';
 
@@ -12,7 +12,7 @@ interface BaseConfig {
 	}
 }
 
-export type Config = BaseConfig & DebBuilderConfig & ArtifactsProviderConfig;
+export type Config = BaseConfig & DebBuilderConfig & ArtifactProviderConfig;
 
 export class ConfigProvider {
 	private path: string;

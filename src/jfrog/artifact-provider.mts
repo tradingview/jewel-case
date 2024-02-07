@@ -3,8 +3,8 @@ import { type ArtifactoryClient, type ArtifactoryItemMeta, createArtifactoryClie
 import { createFile } from '../fs.mjs';
 import { get } from '../http.mjs';
 
-import type { Artifact, ArtifactsProvider } from '../artifacts-provider.mjs';
-import type { ArtifactsProviderConfig } from '../artifacts-provider-config.mjs';
+import type { Artifact, ArtifactProvider } from '../artifact-provider.mjs';
+import type { ArtifactProviderConfig } from '../artifact-provider-config.mjs';
 import metapointerContent from '../s3-metapointer.mjs';
 
 interface BuildsList {
@@ -22,13 +22,13 @@ interface BuildInfo {
 	}
 }
 
-export default class JfrogArtifactsProvider implements ArtifactsProvider {
+export default class JfrogArtifactProvider implements ArtifactProvider {
 	private artifactoryClient: ArtifactoryClient;
 	private buildsList?: BuildsList;
 
-	private readonly config: ArtifactsProviderConfig;
+	private readonly config: ArtifactProviderConfig;
 
-	constructor(config: ArtifactsProviderConfig) {
+	constructor(config: ArtifactProviderConfig) {
 		this.config = config;
 		this.artifactoryClient = createArtifactoryClient({
 			protocol: this.config.artifactsProvider.protocol,
