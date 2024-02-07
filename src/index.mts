@@ -6,7 +6,7 @@ import JfrogArtifactProvider from './jfrog/artifact-provider.mjs';
 export { type Config, createConfigProvider } from './config.mjs';
 
 export function plan(config: Config): Promise<void[]> {
-	const artifactsProvider = new JfrogArtifactProvider(config);
+	const artifactsProvider = new JfrogArtifactProvider(config.artifactsProvider);
 
 	const builders: Deployer[] = [];
 

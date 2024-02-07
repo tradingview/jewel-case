@@ -6,13 +6,15 @@ import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
 import type { Repo } from './repo.mjs';
 
 interface BaseConfig {
-	base: {
-		out: string;
-		repo: Repo;
-	}
+	out: string;
+	repo: Repo;
 }
 
-export type Config = BaseConfig & DebBuilderConfig & ArtifactProviderConfig;
+export interface Config {
+	base: BaseConfig;
+	artifactsProvider: ArtifactProviderConfig;
+	debBuilder: DebBuilderConfig;
+}
 
 export class ConfigProvider {
 	private path: string;

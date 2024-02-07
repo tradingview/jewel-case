@@ -31,10 +31,10 @@ export default class JfrogArtifactProvider implements ArtifactProvider {
 	constructor(config: ArtifactProviderConfig) {
 		this.config = config;
 		this.artifactoryClient = createArtifactoryClient({
-			protocol: this.config.artifactsProvider.protocol,
-			host: this.config.artifactsProvider.host,
-			apiKey: this.config.artifactsProvider.apiKey,
-			user: this.config.artifactsProvider.user,
+			protocol: this.config.protocol,
+			host: this.config.host,
+			apiKey: this.config.apiKey,
+			user: this.config.user,
 		});
 	}
 
@@ -82,7 +82,7 @@ export default class JfrogArtifactProvider implements ArtifactProvider {
 
 		const result: BuildInfo[] = [];
 
-		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${this.config.artifactsProvider.project}`);
+		const buildsEndpoint = this.artifactoryClient.resolveUri(`api/build/${this.config.project}`);
 
 		if (!this.buildsList) {
 			const allBuilds = await get(buildsEndpoint);
