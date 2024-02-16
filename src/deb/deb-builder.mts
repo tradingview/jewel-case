@@ -16,15 +16,15 @@ const ReleaseFileTemplate =
 Label: Ubuntu/Debian
 Architecture: $ARCH
 Component: $COMPONENT
-Codename: $CHANNEL\n`;
+Codename: $DISTRIBUTION\n`;
 
 interface DebDescriptor {
 	version: string,
 	artifact: Artifact
 }
 
-interface ChannelItem {
-	channel: string;
+interface DistributionItem {
+	distribution: string;
 	debs: DebDescriptor[]
 }
 
@@ -38,9 +38,9 @@ export class DebBuilder implements Deployer {
 	private readonly dists: string;
 	private readonly keys: string;
 
-	private debRepo: ChannelItem[] = [];
+	private debRepo: DistributionItem[] = [];
 
-	private archesByChannel: Map<string, Set<string>> = new Map();
+	private archesByDistribution: Map<string, Set<string>> = new Map();
 
 	constructor(artifactProvider: ArtifactProvider, config: Config) {
 		this.config = config;
@@ -71,35 +71,35 @@ export class DebBuilder implements Deployer {
 		return `${this.config.debBuilder.applicationName}-${version}_${arch}.deb`;
 	}
 
-	private async makeReleaseFileAndSign(channel: string, arch: string): Promise<void> {
+	private async makeReleaseFileAndSign(distribution: string, arch: string): Promise<void> {
 		const publicKeyPath = path.join(this.keys, 'desktop.asc');
 		createDir(this.keys);
 		await fs.promises.copyFile(this.config.debBuilder.gpgPublicKeyPath, publicKeyPath);
 
 		const releaseContent = ReleaseFileTemplate
 			.replace('$ORIGIN', this.config.debBuilder.origin)
-			.replace('$CHANNEL', channel)
+			.replace('$DISTRIBUTION', distribution)
 			.replace('$ARCH', arch)
 			.replace('$COMPONENT', this.config.debBuilder.component);
 
-		const releaseFilePath = path.join(this.dists, channel, 'Release');
-		const releaseGpgFilePath = path.join(this.dists, channel, 'Release.gpg');
-		const inReleaseFilePath = path.join(this.dists, channel, 'InRelease');
+		const releaseFilePath = path.join(this.dists, distribution, 'Release');
+		const releaseGpgFilePath = path.join(this.dists, distribution, 'Release.gpg');
+		const inReleaseFilePath = path.join(this.dists, distribution, 'InRelease');
 
 		await fs.promises.writeFile(releaseFilePath, releaseContent);
 
-		await execToolToFile('apt-ftparchive', ['release', `${this.dists}/${channel}`], releaseFilePath, true);
+		await execToolToFile('apt-ftparchive', ['release', `${this.dists}/${distribution}`], releaseFilePath, true);
 		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.debBuilder.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
 		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.debBuilder.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
 	}
 
 	private async prepareMetaRepository(): Promise<void> {
-		const debsPromises: Promise<{channel: string, debs: DebDescriptor[]}>[] = [];
+		const debsPromises: Promise<{distribution: string, debs: DebDescriptor[]}>[] = [];
 
-		this.config.base.repo.forEach(channelEntry => {
-			debsPromises.push((async(): Promise<{ channel: string, debs: DebDescriptor[] }> => ({
-				channel: channelEntry.channel,
-				debs: await this.debsByPackages(channelEntry.packages),
+		this.config.base.repo.forEach(distributionEntry => {
+			debsPromises.push((async(): Promise<{ distribution: string, debs: DebDescriptor[] }> => ({
+				distribution: distributionEntry.channel,
+				debs: await this.debsByPackages(distributionEntry.packages),
 			}))());
 		});
 
@@ -138,16 +138,16 @@ export class DebBuilder implements Deployer {
 	private async dpkgScanpackages(): Promise<void> {
 		const promises: Promise<void>[] = [];
 
-		this.debRepo.forEach(channel => {
-			channel.debs.forEach(deb => {
-				promises.push(this.handleDeb(channel.channel, deb));
+		this.debRepo.forEach(distribution => {
+			distribution.debs.forEach(deb => {
+				promises.push(this.handleDeb(distribution.distribution, deb));
 			});
 		});
 
 		await Promise.all(promises);
 	}
 
-	private async handleDeb(channel: string, deb: DebDescriptor): Promise<void> {
+	private async handleDeb(distribution: string, deb: DebDescriptor): Promise<void> {
 		const controlTarSizeRange = { start: 120, end: 129 };
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
@@ -170,16 +170,16 @@ export class DebBuilder implements Deployer {
 					const controlMeta = ini.parse(controlMetaContent);
 					const arch = controlMeta['Architecture'];
 
-					const archesSet = this.archesByChannel.get(channel);
+					const archesSet = this.archesByDistribution.get(distribution);
 
 					if (archesSet) {
 						archesSet.add(arch);
 					} else {
-						this.archesByChannel.set(channel, new Set<string>([arch]));
+						this.archesByDistribution.set(distribution, new Set<string>([arch]));
 					}
 
 					const targetMetaPath = path.join(this.dists,
-						channel,
+						distribution,
 						this.config.debBuilder.component,
 						`binary-${arch}`,
 						`${this.debName(deb.version, arch)}.meta`);
@@ -192,7 +192,7 @@ export class DebBuilder implements Deployer {
 						this.config.debBuilder.component,
 						`${this.config.debBuilder.applicationName[0]}`,
 						this.config.debBuilder.applicationName,
-						channel,
+						distribution,
 						this.debName(deb.version, arch));
 					const relativeDebPath = path.relative(this.root, debPath);
 					this.artifactProvider.createMetapointerFile(deb.artifact, debPath);
@@ -227,8 +227,8 @@ export class DebBuilder implements Deployer {
 
 		const compressPromises: Promise<void>[] = [];
 
-		this.debRepo.forEach(channelEntry => {
-			const distsRoot = path.join(this.dists, channelEntry.channel, this.config.debBuilder.component);
+		this.debRepo.forEach(distributionEntry => {
+			const distsRoot = path.join(this.dists, distributionEntry.distribution, this.config.debBuilder.component);
 			const distsByArch = fs.readdirSync(distsRoot).map(dist => path.join(distsRoot, dist));
 
 			distsByArch.forEach(dist => {
@@ -256,12 +256,12 @@ export class DebBuilder implements Deployer {
 		const releasesPromises: Promise<void>[] = [];
 
 		this.debRepo.forEach(chan => {
-			const archesSet = this.archesByChannel.get(chan.channel);
+			const archesSet = this.archesByDistribution.get(chan.distribution);
 			if (!archesSet) {
-				throw new Error('No arch was found for channel');
+				throw new Error('No arch was found for distribution');
 			}
 
-			releasesPromises.push(this.makeReleaseFileAndSign(chan.channel, [...archesSet.values()].join(' ')));
+			releasesPromises.push(this.makeReleaseFileAndSign(chan.distribution, [...archesSet.values()].join(' ')));
 		});
 
 		return Promise.all(releasesPromises);
