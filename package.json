@@ -41,7 +41,7 @@
 	},
 	"dependencies": {
 		"ini": "^4.1.0",
-		"s3-groundskeeper": "0.2.2",
+		"s3-groundskeeper": "0.3.1",
 		"tar": "^6.1.13",
 		"yargs": "^17.6.2"
 	}

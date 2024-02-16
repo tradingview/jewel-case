@@ -12,7 +12,6 @@ import { createDir, execToolToFile, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
 import type { Deployer } from '../deployer.mjs';
 import type { Packages } from '../repo.mjs';
-import { requestRange } from '../http.mjs';
 
 const ReleaseFileTemplate =
 `Origin: $ORIGIN
@@ -23,7 +22,6 @@ Codename: $CHANNEL\n`;
 
 interface DebDescriptor {
 	version: string,
-	url: string,
 	artifact: Artifact
 }
 
@@ -109,7 +107,7 @@ export class DebBuilder implements Deployer {
 	}
 
 	private async debsByPackages(packs: Packages): Promise<DebDescriptor[]> {
-		const debsPromises: Promise<DebDescriptor>[] = [];
+		const debs: DebDescriptor[] = [];
 		const artsByBuildNumbersPromises: Promise<{version: string, artifacts: Artifact[]}>[] = [];
 
 		packs.packages.forEach(pack => {
@@ -123,15 +121,14 @@ export class DebBuilder implements Deployer {
 
 		artsByBuildNumbers.forEach(value => {
 			value.artifacts.filter(artifact => artifact.type === 'deb').forEach(artifact => {
-				debsPromises.push((async(): Promise<DebDescriptor> => ({
+				debs.push({
 					version: value.version,
 					artifact,
-					url: await this.artifactProvider.artifactUrl(artifact),
-				}))());
+				});
 			});
 		});
 
-		return Promise.all(debsPromises);
+		return debs;
 	}
 
 	private async dpkgScanpackages(): Promise<void> {
@@ -147,14 +144,14 @@ export class DebBuilder implements Deployer {
 	}
 
 	private async handleDeb(channel: string, deb: DebDescriptor): Promise<void> {
-		const debUrl = deb.url;
-		const controlTarSizeRange = '120-129';
+		const controlTarSizeRange = { start: 120, end: 129 };
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-		const cocntrolTarSize = Number((await requestRange(debUrl, controlTarSizeRange)).read().toString()
+		const controlTarSize = Number((await this.artifactProvider.getArtifactContent(deb.artifact, controlTarSizeRange)).read().toString()
 			.trim());
-		const controlTarRange = `132-${131 + cocntrolTarSize}`;
-		const controlTar = await requestRange(debUrl, controlTarRange);
+		const controlTarRange = { start: 132, end: 131 + controlTarSize };
+
+		const controlTar = await this.artifactProvider.getArtifactContent(deb.artifact, controlTarRange);
 
 		const whereExtract = path.join(os.tmpdir(), `control-${crypto.randomBytes(4).toString('hex')}`);
 
