@@ -203,13 +203,7 @@ export class DebBuilder implements Deployer {
 
 					const dataToAppend = `Filename: ${relativeDebPath}\nSize: ${debSize}\nSHA1: ${sha1}\nSHA256: ${sha256}\nMD5Sum: ${md5}\n`;
 
-					fs.appendFile(targetMetaPath, dataToAppend, err => {
-						if (err) {
-							throw err;
-						}
-
-						resolve();
-					});
+					fs.promises.appendFile(targetMetaPath, dataToAppend).then(() => resolve());
 				});
 		});
 	}
