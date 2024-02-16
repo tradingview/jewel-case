@@ -1,9 +1,7 @@
 import { createGzip } from 'zlib';
 
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as ini from 'ini';
-import * as os from 'os';
 import * as path from 'path';
 import * as tar from 'tar';
 
@@ -35,6 +33,7 @@ export class DebBuilder implements Deployer {
 	private readonly artifactProvider: ArtifactProvider;
 
 	private readonly root: string;
+	private readonly temp: string;
 	private readonly pool: string;
 	private readonly dists: string;
 	private readonly keys: string;
@@ -47,6 +46,7 @@ export class DebBuilder implements Deployer {
 		this.config = config;
 
 		this.root = path.join(this.config.base.out, 'repo', this.config.debBuilder.applicationName, 'deb');
+		this.temp = path.join(this.config.base.out, 'temp');
 		this.pool = path.join(this.root, 'pool');
 		this.dists = path.join(this.root, 'dists');
 		this.keys = path.join(this.root, 'keys');
@@ -54,9 +54,13 @@ export class DebBuilder implements Deployer {
 	}
 
 	public async plan(): Promise<void> {
-		await this.prepareMetaRepository();
-		await this.dpkgScanpackages();
-		await this.makeRelease();
+		try {
+			await this.prepareMetaRepository();
+			await this.dpkgScanpackages();
+			await this.makeRelease();
+		} finally {
+			removeDir(this.temp);
+		}
 	}
 
 	public apply(): void {
@@ -153,7 +157,7 @@ export class DebBuilder implements Deployer {
 
 		const controlTar = await this.artifactProvider.getArtifactContent(deb.artifact, controlTarRange);
 
-		const whereExtract = path.join(os.tmpdir(), `control-${crypto.randomBytes(4).toString('hex')}`);
+		const whereExtract = path.join(this.temp, `control-${deb.artifact.md5}`);
 
 		createDir(whereExtract);
 
