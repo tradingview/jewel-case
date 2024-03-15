@@ -12,7 +12,7 @@ export interface RequestData {
 	redirectHandler?: (url: string) => string | undefined;
 }
 
-export function requestStream(url: string, method: string, requestData?: RequestData): Promise<IncomingMessage> {
+export function requestStream(url: URL, method: string, requestData?: RequestData): Promise<IncomingMessage> {
 	return new Promise((resolve, reject) => {
 		try {
 			const req = httpRequest(url, { method });
@@ -22,7 +22,7 @@ export function requestStream(url: string, method: string, requestData?: Request
 					if (incomingMessage.statusCode !== 200) {
 						const stCode = incomingMessage.statusCode ?? 'NO_CODE';
 						const stMessage = incomingMessage.statusMessage ?? 'NO_MESSAGE';
-						const message = `[${method} ${url}]:${stCode}/${stMessage}`;
+						const message = `[${method} ${url.toString()}]:${stCode}/${stMessage}`;
 						reject(new Error(message));
 					}
 
@@ -31,7 +31,7 @@ export function requestStream(url: string, method: string, requestData?: Request
 				.on('error', (err: Error) => {
 					const errno = (err as {errno?: string}).errno ?? '';
 					if (errno === 'ETIMEDOUT') {
-						reject(new Error(`Request (${url}) timeout.`));
+						reject(new Error(`Request (${url.toString()}) timeout.`));
 					} else {
 						reject(err);
 					}
@@ -61,7 +61,7 @@ export function requestStream(url: string, method: string, requestData?: Request
 	});
 }
 
-export async function request(url: string, method: string, requestData?: RequestData): Promise<Buffer> {
+export async function request(url: URL, method: string, requestData?: RequestData): Promise<Buffer> {
 	const responseStream = await requestStream(url, method, requestData);
 
 	let buffer: Buffer | undefined = undefined;
@@ -74,7 +74,7 @@ export async function request(url: string, method: string, requestData?: Request
 	return buffer ? buffer : Buffer.from('');
 }
 
-export function requestRange(url: string, range: string): Promise<IncomingMessage> {
+export function requestRange(url: URL, range: string): Promise<IncomingMessage> {
 	return new Promise<IncomingMessage>((resolve, reject) => {
 		try {
 			const req = httpRequest(url, { method: 'GET' });
@@ -88,7 +88,7 @@ export function requestRange(url: string, range: string): Promise<IncomingMessag
 				if (incomingMessage.statusCode !== 200) {
 					const stCode = incomingMessage.statusCode ?? 'NO_CODE';
 					const stMessage = incomingMessage.statusMessage ?? 'NO_MESSAGE';
-					const message = `[GET ${url}]:${stCode}/${stMessage}`;
+					const message = `[GET ${url.toString()}]:${stCode}/${stMessage}`;
 					reject(new Error(message));
 					return;
 				}
@@ -98,7 +98,7 @@ export function requestRange(url: string, range: string): Promise<IncomingMessag
 				.on('error', (err: Error) => {
 					const errno = (err as {errno?: string}).errno ?? '';
 					if (errno === 'ETIMEDOUT') {
-						reject(new Error(`Request (${url}) timeout.`));
+						reject(new Error(`Request (${url.toString()}) timeout.`));
 					} else {
 						reject(err);
 					}
@@ -114,10 +114,10 @@ export function requestRange(url: string, range: string): Promise<IncomingMessag
 	});
 }
 
-export function get(url: string): Promise<Buffer> {
+export function get(url: URL): Promise<Buffer> {
 	return request(url, 'GET', undefined);
 }
 
-export function post(url: string, requestData?: RequestData): Promise<Buffer> {
+export function post(url: URL, requestData?: RequestData): Promise<Buffer> {
 	return request(url, 'POST', requestData);
 }

@@ -1,12 +1,10 @@
 import { type ArtifactoryClient, type ArtifactoryItemMeta, type ByteRange, createArtifactoryClient } from 's3-groundskeeper';
 
-import { createFile } from '../fs.mjs';
 import { get } from '../http.mjs';
 
 import type { Artifact, ArtifactProvider } from '../artifact-provider.mjs';
 import type { ArtifactProviderConfig } from '../artifact-provider-config.mjs';
 import type { IncomingMessage } from 'http';
-import metapointerContent from '../s3-metapointer.mjs';
 
 interface BuildsList {
 	buildsNumbers: {
@@ -65,11 +63,6 @@ export default class JfrogArtifactProvider implements ArtifactProvider {
 		});
 	}
 
-	// eslint-disable-next-line class-methods-use-this
-	public createMetapointerFile(artifact: Artifact, fileName: string): void {
-		createFile(fileName, metapointerContent(artifact.md5));
-	}
-
 	private async getArtifactoryItemMeta(artifact: Artifact): Promise<ArtifactoryItemMeta> {
 		const aqlItemField = 'actual_md5';
 
@@ -99,7 +92,7 @@ export default class JfrogArtifactProvider implements ArtifactProvider {
 		const buildsEndpoint = this.artifactoryClient.resolveUrl(`api/build/${this.config.project}`);
 
 		if (!this.buildsList) {
-			const allBuilds = await get(buildsEndpoint.toString());
+			const allBuilds = await get(buildsEndpoint);
 			this.buildsList = JSON.parse(allBuilds.toString()) as BuildsList;
 		}
 
@@ -122,7 +115,7 @@ export default class JfrogArtifactProvider implements ArtifactProvider {
 		for (const value of buildTimes(buildNumber)) {
 			const buildInfoEndpointUrl = new URL(buildNumber, buildsEndpoint);
 			buildInfoEndpointUrl.searchParams.set('started', value.toISOString());
-			infoPromises.push(get(buildInfoEndpointUrl.toString()));
+			infoPromises.push(get(buildInfoEndpointUrl));
 		}
 
 		const infos = await Promise.all(infoPromises);

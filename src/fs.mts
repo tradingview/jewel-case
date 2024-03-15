@@ -22,10 +22,6 @@ export function removeDir(dirName: string): void {
 	}
 }
 
-export function createMetapointerContent(fileMd5Hash: string): string {
-	return `#metapointer jfrogart\noid md5:${fileMd5Hash}`;
-}
-
 // eslint-disable-next-line max-params
 export async function execToolToFile(tool: string, args: string[], outputPath?: string, append?: boolean): Promise<void> {
 	if (!append && outputPath && existsSync(outputPath)) {

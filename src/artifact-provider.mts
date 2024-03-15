@@ -14,5 +14,4 @@ export interface ArtifactProvider {
 	artifactsByBuildNumber(buildNumber: string): Promise<Artifact[]>;
 	artifactUrl(artifact: Artifact): Promise<URL>;
 	getArtifactContent(artifact: Artifact, range?: ByteRange): Promise<IncomingMessage>;
-	createMetapointerFile(artifact: Artifact, fileName: string): void;
 }

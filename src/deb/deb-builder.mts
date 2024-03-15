@@ -8,6 +8,7 @@ import * as tar from 'tar';
 import type { Artifact, ArtifactProvider } from '../artifact-provider.mjs';
 import { createDir, execToolToFile, removeDir } from '../fs.mjs';
 import type { Config } from '../config.mjs';
+import { createMetapointerFile } from '../s3-metapointer.mjs';
 import type { Deployer } from '../deployer.mjs';
 import type { Packages } from '../repo.mjs';
 
@@ -195,7 +196,7 @@ export class DebBuilder implements Deployer {
 						distribution,
 						this.debName(deb.version, arch));
 					const relativeDebPath = path.relative(this.root, debPath);
-					this.artifactProvider.createMetapointerFile(deb.artifact, debPath);
+					createMetapointerFile(deb.artifact.md5, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
 					const sha256 = controlTar.headers['x-checksum-sha256'];
