@@ -1,19 +1,10 @@
 import path from 'path';
 import { pathToFileURL } from 'url';
 
-import type { ArtifactProviderConfig } from './artifact-provider-config.mjs';
-import type { DebBuilderConfig } from './deb/deb-builder-config.mjs';
-import type { Repo } from './repo.mjs';
-
-interface BaseConfig {
-	out: string;
-	repo: Repo;
-}
+import type { Deployer } from './deployer.mjs';
 
 export interface Config {
-	base: BaseConfig;
-	artifactsProvider: ArtifactProviderConfig;
-	debBuilder: DebBuilderConfig;
+	deployers: Deployer[];
 }
 
 export class ConfigProvider {

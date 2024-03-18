@@ -9,7 +9,7 @@ describe('apply', () => {
 });
 
 describe('plan', () => {
-	it('should return undefined', () => {
-		expect(plan()).toBe(undefined);
+	it('should return undefined', async() => {
+		expect(await plan({ deployers: [] })).toBe(undefined);
 	});
 });
