@@ -2,7 +2,6 @@ import type { Artifact } from '../artifact-provider.mjs';
 
 export interface DebBuilderConfig {
 	out: string,
-	gpgPublicKeyPath: string;
 	gpgKeyName: string;
 	applicationName: string;
 	origin: string;

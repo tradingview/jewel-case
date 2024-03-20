@@ -48,8 +48,6 @@ export class DebBuilder implements Deployer {
 	private readonly temp: string;
 	private readonly pool: string;
 	private readonly dists: string;
-	private readonly keys: string;
-
 	private archesByDistComp: Map<string, Set<string>> = new Map();
 
 	constructor(config: DebBuilderConfig, artifactProvider: ArtifactProvider, packageCreator: (md5: string, path: string) => (Promise<void> | void)) {
@@ -61,7 +59,6 @@ export class DebBuilder implements Deployer {
 		this.temp = path.join(this.config.out, 'temp');
 		this.pool = path.join(this.root, 'pool');
 		this.dists = path.join(this.root, 'dists');
-		this.keys = path.join(this.root, 'keys');
 	}
 
 	public async plan(): Promise<void> {
@@ -82,10 +79,6 @@ export class DebBuilder implements Deployer {
 	}
 
 	private async makeReleaseFileAndSign(distribution: string, component: string, arch: string): Promise<void> {
-		const publicKeyPath = path.join(this.keys, 'desktop.asc');
-		createDir(this.keys);
-		await fs.promises.copyFile(this.config.gpgPublicKeyPath, publicKeyPath);
-
 		const releaseContent = ReleaseFileTemplate
 			.replace('$ORIGIN', this.config.origin)
 			.replace('$DISTRIBUTION', distribution)
