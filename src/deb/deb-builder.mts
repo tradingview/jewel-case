@@ -42,7 +42,7 @@ function iterateDebs(repo: DebRepo, callback: (distribution: string, component: 
 export class DebBuilder implements Deployer {
 	private readonly config: DebBuilderConfig;
 	private readonly artifactProvider: ArtifactProvider;
-	private readonly metapointerCreator: (md5: string, path: string) => void;
+	private readonly packageCreator: (md5: string, path: string) => (Promise<void> | void);
 
 	private readonly root: string;
 	private readonly temp: string;
@@ -52,10 +52,10 @@ export class DebBuilder implements Deployer {
 
 	private archesByDistComp: Map<string, Set<string>> = new Map();
 
-	constructor(config: DebBuilderConfig, artifactProvider: ArtifactProvider, metapointerCreator: (md5: string, path: string) => void) {
+	constructor(config: DebBuilderConfig, artifactProvider: ArtifactProvider, packageCreator: (md5: string, path: string) => (Promise<void> | void)) {
 		this.config = config;
 		this.artifactProvider = artifactProvider;
-		this.metapointerCreator = metapointerCreator;
+		this.packageCreator = packageCreator;
 
 		this.root = path.join(this.config.out);
 		this.temp = path.join(this.config.out, 'temp');
@@ -92,9 +92,9 @@ export class DebBuilder implements Deployer {
 			.replace('$ARCH', arch)
 			.replace('$COMPONENT', component);
 
-		const releaseFilePath = path.join(this.dists, distribution, component, 'Release');
-		const releaseGpgFilePath = path.join(this.dists, distribution, component, 'Release.gpg');
-		const inReleaseFilePath = path.join(this.dists, distribution, component, 'InRelease');
+		const releaseFilePath = path.join(this.dists, distribution, 'Release');
+		const releaseGpgFilePath = path.join(this.dists, distribution, 'Release.gpg');
+		const inReleaseFilePath = path.join(this.dists, distribution, 'InRelease');
 
 		await fs.promises.writeFile(releaseFilePath, releaseContent);
 
@@ -126,6 +126,8 @@ export class DebBuilder implements Deployer {
 		const whereExtract = path.join(this.temp, `control-${deb.artifact.md5}`);
 
 		createDir(whereExtract);
+
+		let createFilePromise: Promise<void> | undefined = undefined;
 
 		await new Promise<void>(resolve => {
 			controlTar
@@ -161,7 +163,6 @@ export class DebBuilder implements Deployer {
 						distribution,
 						this.debName(deb.version, arch));
 					const relativeDebPath = path.relative(this.root, debPath);
-					this.metapointerCreator(deb.artifact.md5, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
 					const sha256 = controlTar.headers['x-checksum-sha256'];
@@ -174,8 +175,18 @@ export class DebBuilder implements Deployer {
 					const dataToAppend = `Filename: ${relativeDebPath}\nSize: ${debSize}\nSHA1: ${sha1}\nSHA256: ${sha256}\nMD5Sum: ${md5}\n`;
 
 					fs.promises.appendFile(targetMetaPath, dataToAppend).then(() => resolve());
+
+					const createFileOperation = this.packageCreator(deb.artifact.md5, debPath);
+
+					if(createFileOperation instanceof Promise) {
+						createFilePromise = createFileOperation
+					}
 				});
 		});
+
+		if (createFilePromise) {
+			await createFilePromise;
+		}
 	}
 
 	private async makeRelease(): Promise<{}> {
