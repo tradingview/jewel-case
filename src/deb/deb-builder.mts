@@ -65,10 +65,10 @@ export class DebBuilder implements Deployer {
 	private readonly artifactProvider: ArtifactProvider;
 	private readonly packageCreator: (md5: string, path: string) => (Promise<void> | void);
 
-	private readonly root: string;
-	private readonly temp: string;
-	private readonly pool: string;
-	private readonly dists: string;
+	private readonly rootPath: string;
+	private readonly tempPath: string;
+	private readonly poolPath: string;
+	private readonly distsPath: string;
 	private archesByDistComp: Map<string, Set<string>> = new Map();
 
 	constructor(config: Config, artifactProvider: ArtifactProvider, packageCreator: (md5: string, path: string) => (Promise<void> | void)) {
@@ -76,10 +76,10 @@ export class DebBuilder implements Deployer {
 		this.artifactProvider = artifactProvider;
 		this.packageCreator = packageCreator;
 
-		this.root = path.join(this.config.out);
-		this.temp = path.join(this.config.out, 'temp');
-		this.pool = path.join(this.root, 'pool');
-		this.dists = path.join(this.root, 'dists');
+		this.rootPath = path.join(this.config.out);
+		this.tempPath = path.join(this.config.out, 'temp');
+		this.poolPath = path.join(this.rootPath, 'pool');
+		this.distsPath = path.join(this.rootPath, 'dists');
 	}
 
 	public async plan(): Promise<void> {
@@ -87,7 +87,7 @@ export class DebBuilder implements Deployer {
 			await this.dpkgScanpackages();
 			await this.makeRelease();
 		} finally {
-			removeDir(this.temp);
+			removeDir(this.tempPath);
 		}
 	}
 
@@ -106,13 +106,14 @@ export class DebBuilder implements Deployer {
 			.replace('$ARCH', arch)
 			.replace('$COMPONENT', component);
 
-		const releaseFilePath = path.join(this.dists, distribution, 'Release');
-		const releaseGpgFilePath = path.join(this.dists, distribution, 'Release.gpg');
-		const inReleaseFilePath = path.join(this.dists, distribution, 'InRelease');
+		const distributionPath = path.join(this.distsPath, distribution);
+		const releaseFilePath = path.join(distributionPath, 'Release');
+		const releaseGpgFilePath = path.join(distributionPath, 'Release.gpg');
+		const inReleaseFilePath = path.join(distributionPath, 'InRelease');
 
 		await fs.promises.writeFile(releaseFilePath, releaseContent);
 
-		await execToolToFile('apt-ftparchive', ['release', `${this.dists}/${distribution}`], releaseFilePath, true);
+		await execToolToFile('apt-ftparchive', ['release', distributionPath], releaseFilePath, true);
 		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.gpgKeyName, '-abs', '-o', releaseGpgFilePath, releaseFilePath]);
 		await execToolToFile('gpg', ['--no-tty', '--default-key', this.config.gpgKeyName, '--clearsign', '-o', inReleaseFilePath, releaseFilePath]);
 	}
@@ -137,7 +138,7 @@ export class DebBuilder implements Deployer {
 
 		const controlTar = await this.artifactProvider.getArtifactContent(deb.artifact, controlTarRange);
 
-		const whereExtract = path.join(this.temp, `control-${deb.artifact.md5}`);
+		const whereExtract = path.join(this.tempPath, `control-${deb.artifact.md5}`);
 
 		createDir(whereExtract);
 
@@ -160,7 +161,7 @@ export class DebBuilder implements Deployer {
 						this.archesByDistComp.set(`${distribution}/${component}`, new Set<string>([arch]));
 					}
 
-					const targetMetaPath = path.join(this.dists,
+					const targetMetaPath = path.join(this.distsPath,
 						distribution,
 						component,
 						`binary-${arch}`,
@@ -170,13 +171,13 @@ export class DebBuilder implements Deployer {
 
 					removeDir(whereExtract);
 
-					const debPath = path.join(this.pool,
+					const debPath = path.join(this.poolPath,
 						component,
 						`${this.config.applicationName[0]}`,
 						this.config.applicationName,
 						distribution,
 						this.debName(deb.version, arch));
-					const relativeDebPath = path.relative(this.root, debPath);
+					const relativeDebPath = path.relative(this.rootPath, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
 					const sha256 = controlTar.headers['x-checksum-sha256'];
@@ -219,8 +220,8 @@ export class DebBuilder implements Deployer {
 		const compressPromises: Promise<void>[] = [];
 
 		iterateComponents(this.config.repo, (distribution, component) => {
-			const componentssRoot = path.join(this.dists, distribution, component);
-			const componentsByArch = fs.readdirSync(componentssRoot).map(dist => path.join(componentssRoot, dist));
+			const componentRoot = path.join(this.distsPath, distribution, component);
+			const componentsByArch = fs.readdirSync(componentRoot).map(dist => path.join(componentRoot, dist));
 
 			componentsByArch.forEach(dist => {
 				const targetPackagesFile = path.join(dist, 'Packages');
