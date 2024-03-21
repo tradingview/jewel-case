@@ -130,16 +130,16 @@ export class DebBuilder implements Deployer {
 
 	private async handleDeb(distribution: string, component: string, deb: DebDescriptor): Promise<void> {
 		const controlTarSizeRange = { start: 120, end: 129 };
-
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-		const controlTarSize = Number((await this.artifactProvider.getArtifactContent(deb.artifact, controlTarSizeRange)).read().toString()
-			.trim());
+		const controlTarSizeString =
+			(await this.artifactProvider.getArtifactContent(deb.artifact, controlTarSizeRange))
+				.read()
+				.toString()
+				.trim();
+		const controlTarSize = parseInt(controlTarSizeString, 10);
 		const controlTarRange = { start: 132, end: 131 + controlTarSize };
-
 		const controlTar = await this.artifactProvider.getArtifactContent(deb.artifact, controlTarRange);
 
 		const whereExtract = path.join(this.tempPath, `control-${deb.artifact.md5}`);
-
 		createDir(whereExtract);
 
 		let createFilePromise: Promise<void> | undefined = undefined;
