@@ -1,7 +1,8 @@
 import { exit } from 'process';
 import yargs from 'yargs';
 
-import { apply, createConfigProvider, plan } from './index.mjs';
+import { apply, plan } from './index.mjs';
+import { createConfigProvider } from './config.mjs';
 import { getMessageOfError } from './utils.mjs';
 
 type CommandLineArgs = Awaited<ReturnType<typeof yargsParsePromise.parse>>;
