@@ -5,10 +5,23 @@ import * as ini from 'ini';
 import * as path from 'path';
 import * as tar from 'tar';
 
+import type { Artifact, ArtifactProvider } from '../artifact-provider.mjs';
 import { createDir, execToolToFile, removeDir } from '../fs.mjs';
-import type { DebBuilderConfig, DebDescriptor, DebRepo } from './deb-builder-config.mjs';
-import type { ArtifactProvider } from '../artifact-provider.mjs';
 import type { Deployer } from '../deployer.mjs';
+
+type DebRepoDistribution = string;
+type DebRepoComponent = string;
+
+export interface DebDescriptor {
+	version: string,
+	artifact: Artifact
+}
+
+export interface DebRepo {
+	[key: DebRepoDistribution]: {
+		[key: DebRepoComponent]: DebDescriptor[]
+	}
+}
 
 const ReleaseFileTemplate =
 `Origin: $ORIGIN
@@ -39,8 +52,16 @@ function iterateDebs(repo: DebRepo, callback: (distribution: string, component: 
 	});
 }
 
+export interface Config {
+	out: string,
+	gpgKeyName: string;
+	applicationName: string;
+	origin: string;
+	repo: DebRepo;
+}
+
 export class DebBuilder implements Deployer {
-	private readonly config: DebBuilderConfig;
+	private readonly config: Config;
 	private readonly artifactProvider: ArtifactProvider;
 	private readonly packageCreator: (md5: string, path: string) => (Promise<void> | void);
 
@@ -50,7 +71,7 @@ export class DebBuilder implements Deployer {
 	private readonly dists: string;
 	private archesByDistComp: Map<string, Set<string>> = new Map();
 
-	constructor(config: DebBuilderConfig, artifactProvider: ArtifactProvider, packageCreator: (md5: string, path: string) => (Promise<void> | void)) {
+	constructor(config: Config, artifactProvider: ArtifactProvider, packageCreator: (md5: string, path: string) => (Promise<void> | void)) {
 		this.config = config;
 		this.artifactProvider = artifactProvider;
 		this.packageCreator = packageCreator;
