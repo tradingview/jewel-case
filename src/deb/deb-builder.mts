@@ -171,8 +171,8 @@ export class DebBuilder implements Deployer {
 
 					const createFileOperation = this.packageCreator(deb.artifact.md5, debPath);
 
-					if(createFileOperation instanceof Promise) {
-						createFilePromise = createFileOperation
+					if (createFileOperation instanceof Promise) {
+						createFilePromise = createFileOperation;
 					}
 				});
 		});
