@@ -5,7 +5,7 @@
 			"label": "Build",
 			"type": "shell",
 			"group": "build",
-			"command": "npx pnpm build",
+			"command": "pnpm build",
 			"problemMatcher": []
 		}
 	]

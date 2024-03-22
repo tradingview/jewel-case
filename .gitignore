@@ -2,13 +2,12 @@ node_modules/
 
 # build output directories
 dist/
+out/
 
 # default output directory
 out/
 
 # coverage report directory
 /coverage/
-
-.vscode/.env
 
 jewel-case.config.mjs

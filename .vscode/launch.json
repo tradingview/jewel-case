@@ -5,15 +5,45 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Start",
+			"name": "Start plan command",
 			"runtimeArgs": [
 			],
-			"args" : [
-				"${workspaceFolder}/dist/index.js",
-				"--artifactory-project-key", "tradingview-desktop",
-				"plan", "./out", "C:/Users/ekush/Documents/dev/tvd/desktop-packages/src"
+			"program": "${workspaceFolder}/dist/cli.mjs",
+			"args": [
+				"plan"
+			]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Start apply command",
+			"runtimeArgs": [
 			],
-			"envFile": "${workspaceFolder}/.vscode/.env"
+			"program": "${workspaceFolder}/dist/cli.mjs",
+			"args": [
+				"apply"
+			]
+		},
+		{
+			"type": "node",
+			"name": "vscode-jest-tests.v2",
+			"request": "launch",
+			"env": {
+				"NODE_OPTIONS": "--experimental-vm-modules"
+			},
+			"args": [
+				"${workspaceRoot}/node_modules/jest/bin/jest",
+				"--runInBand",
+				"--no-coverage",
+				"--watchAll=false",
+				"--testNamePattern",
+				"${jest.testNamePattern}",
+				"--runTestsByPath",
+				"${jest.testFile}"
+			],
+			"cwd": "${workspaceFolder}/src",
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
 		}
 	]
 }
