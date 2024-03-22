@@ -40,12 +40,6 @@ function interateChannels(repo: MacRepo, callback: (channel: string, channelObj:
 	});
 }
 
-const YmlContentTemplate =
-`version: $VERSION
-path: $PATH
-sha512: $SHA512
-releaseDate: '$DATE'`;
-
 function iteratePackages(repo: MacRepo, callback: (channel: string, pack: PackageDescriptor) => void): void {
 	const channels = Object.keys(repo);
 
@@ -59,6 +53,12 @@ function iteratePackages(repo: MacRepo, callback: (channel: string, pack: Packag
 		}
 	});
 }
+
+const YmlContentTemplate =
+`version: $VERSION
+path: $PATH
+sha512: $SHA512
+releaseDate: '$DATE'`;
 
 export class MacBuilder implements Deployer {
 	private readonly config: Config;

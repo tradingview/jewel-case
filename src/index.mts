@@ -2,12 +2,6 @@ import type { Config } from './config.mjs';
 export type { Config };
 export type { Artifact, ArtifactProvider } from './artifact-provider.mjs';
 export type { ProviderType, ArtifactProviderConfig } from './artifact-provider-config.mjs';
-export {
-	type DebDescriptor,
-	type DebRepo,
-	type Config as DebBuilderConfig,
-	DebBuilder,
-} from './deb/deb-builder.mjs';
 export { default as JfrogArtifactProvider } from './jfrog/artifact-provider.mjs';
 export { createMetapointerFile as createS3MetapointerFile } from './s3-metapointer.mjs';
 
