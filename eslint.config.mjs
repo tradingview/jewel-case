@@ -1,15 +1,11 @@
+import gitIgnore from 'eslint-config-flat-gitignore';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default [
 	'eslint:all',
 	// 'plugin:@typescript-eslint/recommended',
-	{
-		ignores: [
-			'coverage/**',
-			'dist/**',
-		],
-	},
+	gitIgnore(),
 	{
 		rules: {
 			'array-element-newline': ['error', 'consistent'],
