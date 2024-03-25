@@ -95,7 +95,7 @@ export class DebBuilder implements Deployer {
 		console.log(this);
 	}
 
-	private debName(version: string, arch: string): string {
+	private debFileName(version: string, arch: string): string {
 		return `${this.config.applicationName}-${version}_${arch}.deb`;
 	}
 
@@ -165,7 +165,7 @@ export class DebBuilder implements Deployer {
 						distribution,
 						component,
 						`binary-${arch}`,
-						`${this.debName(deb.version, arch)}.meta`);
+						`${this.debFileName(deb.version, arch)}.meta`);
 					createDir(path.dirname(targetMetaPath));
 					fs.renameSync(path.join(whereExtract, 'control'), targetMetaPath);
 
@@ -176,7 +176,7 @@ export class DebBuilder implements Deployer {
 						`${this.config.applicationName[0]}`,
 						this.config.applicationName,
 						distribution,
-						this.debName(deb.version, arch));
+						this.debFileName(deb.version, arch));
 					const relativeDebPath = path.relative(this.rootPath, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
