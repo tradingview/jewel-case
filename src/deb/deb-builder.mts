@@ -12,14 +12,9 @@ import type { Deployer } from '../deployer.mjs';
 type DebRepoDistribution = string;
 type DebRepoComponent = string;
 
-export interface DebDescriptor {
-	version: string,
-	artifact: Artifact
-}
-
 export interface DebRepo {
 	[key: DebRepoDistribution]: {
-		[key: DebRepoComponent]: DebDescriptor[]
+		[key: DebRepoComponent]: Artifact[]
 	}
 }
 
@@ -30,7 +25,7 @@ Architecture: $ARCH
 Component: $COMPONENT
 Codename: $DISTRIBUTION\n`;
 
-function iterateComponents(repo: DebRepo, callback: (distribution: string, component: string, deb: DebDescriptor[]) => void): void {
+function iterateComponents(repo: DebRepo, callback: (distribution: string, component: string, deb: Artifact[]) => void): void {
 	const distributions = Object.keys(repo);
 
 	distributions.forEach(distribution => {
@@ -44,8 +39,8 @@ function iterateComponents(repo: DebRepo, callback: (distribution: string, compo
 	});
 }
 
-function iterateDebs(repo: DebRepo, callback: (distribution: string, component: string, deb: DebDescriptor) => void): void {
-	iterateComponents(repo, (distribution: string, component: string, debs: DebDescriptor[]) => {
+function iterateDebs(repo: DebRepo, callback: (distribution: string, component: string, deb: Artifact) => void): void {
+	iterateComponents(repo, (distribution: string, component: string, debs: Artifact[]) => {
 		debs.forEach(deb => {
 			callback(distribution, component, deb);
 		});
@@ -128,18 +123,18 @@ export class DebBuilder implements Deployer {
 		await Promise.all(promises);
 	}
 
-	private async handleDeb(distribution: string, component: string, deb: DebDescriptor): Promise<void> {
+	private async handleDeb(distribution: string, component: string, deb: Artifact): Promise<void> {
 		const controlTarSizeRange = { start: 120, end: 129 };
 		const controlTarSizeString =
-			(await this.artifactProvider.getArtifactContent(deb.artifact, controlTarSizeRange))
+			(await this.artifactProvider.getArtifactContent(deb, controlTarSizeRange))
 				.read()
 				.toString()
 				.trim();
 		const controlTarSize = parseInt(controlTarSizeString, 10);
 		const controlTarRange = { start: 132, end: 131 + controlTarSize };
-		const controlTar = await this.artifactProvider.getArtifactContent(deb.artifact, controlTarRange);
+		const controlTar = await this.artifactProvider.getArtifactContent(deb, controlTarRange);
 
-		const whereExtract = path.join(this.tempPath, `control-${deb.artifact.md5}`);
+		const whereExtract = path.join(this.tempPath, `control-${deb.md5}`);
 		createDir(whereExtract);
 
 		let createFilePromise: Promise<void> | undefined = undefined;
@@ -152,6 +147,7 @@ export class DebBuilder implements Deployer {
 					const controlMetaContent = fs.readFileSync(path.join(whereExtract, 'control'), 'utf-8').replaceAll(':', '=');
 					const controlMeta = ini.parse(controlMetaContent);
 					const arch = controlMeta['Architecture'];
+					const version = controlMeta['Version'];
 
 					const archesSet = this.archesByDistComp.get(`${distribution}/${component}`);
 
@@ -165,7 +161,7 @@ export class DebBuilder implements Deployer {
 						distribution,
 						component,
 						`binary-${arch}`,
-						`${this.debFileName(deb.version, arch)}.meta`);
+						`${this.debFileName(version, arch)}.meta`);
 					createDir(path.dirname(targetMetaPath));
 					fs.renameSync(path.join(whereExtract, 'control'), targetMetaPath);
 
@@ -176,7 +172,7 @@ export class DebBuilder implements Deployer {
 						`${this.config.applicationName[0]}`,
 						this.config.applicationName,
 						distribution,
-						this.debFileName(deb.version, arch));
+						this.debFileName(version, arch));
 					const relativeDebPath = path.relative(this.rootPath, debPath);
 					const debSize = controlTar.headers['content-range']?.split('/')[1];
 					const sha1 = controlTar.headers['x-checksum-sha1'];
@@ -191,7 +187,7 @@ export class DebBuilder implements Deployer {
 
 					fs.promises.appendFile(targetMetaPath, dataToAppend).then(() => resolve());
 
-					const createFileOperation = this.packageCreator(deb.artifact.md5, debPath);
+					const createFileOperation = this.packageCreator(deb.md5, debPath);
 
 					if (createFileOperation instanceof Promise) {
 						createFilePromise = createFileOperation;

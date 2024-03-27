@@ -3,7 +3,6 @@ export type { Config };
 export type { Artifact, ArtifactProvider } from './artifact-provider.mjs';
 export type { ProviderType, ArtifactProviderConfig } from './artifact-provider-config.mjs';
 export {
-	type DebDescriptor,
 	type DebRepo,
 	type Config as DebBuilderConfig,
 	DebBuilder,
