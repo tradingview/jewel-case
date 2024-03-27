@@ -1,4 +1,7 @@
 {
 	"extends": "../tsconfig-base.json",
-	"include": ["**/*.mts"]
+	"include": ["**/*.mts"],
+	"compilerOptions": {
+		"moduleResolution": "node16"
+	}
 }

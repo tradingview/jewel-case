@@ -1,4 +1,10 @@
 {
+	"name": "jewel-case",
+	"version": "0.0.0",
+	"exports": "./dist/index.mjs",
+	"bin": {
+		"jewelcase": "./dist/cli.mjs"
+	},
 	"devDependencies": {
 		"@jest/globals": "^29.3.1",
 		"@tsconfig/esm": "^1.0.2",
@@ -21,11 +27,12 @@
 		"typescript": "^5.0.4"
 	},
 	"engines": {
-		"node": "^18.13.0"
+		"node": ">=18.13.0"
 	},
 	"packageManager": "pnpm@8.3.1",
 	"private": true,
 	"scripts": {
+		"prepare": "npm run src:build",
 		"jest": "jest",
 		"build": "pnpm src:build",
 		"lint": "pnpm lint:ec && pnpm lint:eslint .",
