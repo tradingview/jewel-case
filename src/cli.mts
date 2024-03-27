@@ -2,6 +2,7 @@ import { exit } from 'process';
 import yargs from 'yargs';
 
 import { apply, plan } from './index.mjs';
+import { createConfigProvider } from './config.mjs';
 import { getMessageOfError } from './utils.mjs';
 
 type CommandLineArgs = Awaited<ReturnType<typeof yargsParsePromise.parse>>;
@@ -15,8 +16,10 @@ async function main(): Promise<number> {
 	const args: CommandLineArgs = await yargsParsePromise.parse();
 	const command = args._[0];
 
+	const configProvider = await createConfigProvider(args.config);
+
 	if (command === 'plan') {
-		plan();
+		await plan(configProvider.config);
 	}
 
 	if (command === 'apply') {

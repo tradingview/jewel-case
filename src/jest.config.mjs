@@ -9,8 +9,16 @@ export default {
 	collectCoverageFrom: ['**/*.mts'],
 
 	coveragePathIgnorePatterns: [
+		'src/artifact-provider-config.mts',
+		'src/artifact-provider.mts',
 		'src/cli.mts',
 		'src/config.mts',
+		'src/deb/*',
+		'src/deployer.mts',
+		'src/fs.mts',
+		'src/jfrog/*',
+		'src/http.mts',
+		'src/s3-metapointer.mts',
 		'src/utils.mts',
 	],
 

@@ -5,12 +5,23 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Start",
+			"name": "Start plan command",
 			"runtimeArgs": [
 			],
 			"program": "${workspaceFolder}/dist/cli.mjs",
 			"args": [
 				"plan"
+			]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Start apply command",
+			"runtimeArgs": [
+			],
+			"program": "${workspaceFolder}/dist/cli.mjs",
+			"args": [
+				"apply"
 			]
 		},
 		{
